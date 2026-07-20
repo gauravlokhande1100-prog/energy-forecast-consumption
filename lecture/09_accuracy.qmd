@@ -1,0 +1,139 @@
+---
+jupyter: python3
+---
+
+# Measuring accuracy: MAE, MSE, RMSE, MAPE {#sec-accuracy}
+
+::: {.callout-note title="Learning objective"}
+You can compute the four standard measures of point-forecast accuracy,
+explain their geometric meaning, and distinguish *which* measure is
+appropriate for a given risk question.
+:::
+
+## Why four measures instead of one?
+
+A load forecast can go wrong in many ways: many small errors in one
+direction, a single huge outlier, a consistent upward or downward
+offset. No single measure summarises all of that. We therefore look at
+four:
+
+- *Mean Absolute Error* (MAE): the average deviation in load units.
+  Robust, easy to interpret, treats one large and many small errors with
+  equal weight.
+- *Mean Squared Error* (MSE): the average squared deviation. Penalises
+  large outliers disproportionately. Has units of "load squared".
+- *Root Mean Squared Error* (RMSE): square root of the MSE; again in
+  load units, but with outlier sensitivity.
+- *Mean Absolute Percentage Error* (MAPE): the average deviation in per
+  cent. Allows comparisons between different load levels.
+
+## AI Act link
+
+Art. 15 of the AI Act (*accuracy, robustness and cybersecurity*) demands
+that high-risk AI systems achieve "appropriate levels of accuracy" and
+declare those in the `MODEL_CARD.md`. What is "appropriate" depends on
+the use case. For a daily forecast of the electric load, a MAPE below 4%
+would be considered state of the art.
+
+## Code in action
+
+```{python}
+#| label: load-and-measure
+#| echo: true
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from spotforecast2_safe.manager.demo_metrics import calculate_metrics
+
+shared = Path("_cache/shared")
+y_eval = pd.read_parquet(shared / "y_eval.parquet")["load"]
+y_pred = pd.read_parquet(shared / "y_pred_24h.parquet")["forecast"]
+y_eval_24h = y_eval.iloc[:24]
+
+m = calculate_metrics(actual=y_eval_24h, predicted=y_pred)
+mae  = float(m["MAE"])
+mse  = float(m["MSE"])
+rmse = float(np.sqrt(mse))
+mape = float(np.mean(np.abs((y_eval_24h.values - y_pred.values) / y_eval_24h.values)))
+
+print(f"MAE  = {mae:7.1f}   MW   (mean absolute error)")
+print(f"MSE  = {mse:9.1f}   MW^2 (mean squared error)")
+print(f"RMSE = {rmse:7.1f}   MW   (root mean squared error)")
+print(f"MAPE = {mape:7.2%}        (mean absolute percentage error)")
+```
+
+## Visualisation: geometry of the metrics
+
+An evocative view of the measures: the *histogram of residuals*
+(forecast minus actual value). The MAE is the average distance from
+zero; the RMSE is the spread weighted by error size. Both can be drawn
+as vertical lines.
+
+```{python}
+#| label: fig-metrics-geometry
+#| fig-cap: "Histogram of the 24 residuals of the daily forecast. The vertical lines show MAE and RMSE as alternative spread measures. Here the MAE is the average of the absolute distances to zero; the RMSE is the square root of the average of the squared distances and is influenced more strongly by the outlier at the histogram edge."
+#| echo: true
+import matplotlib.pyplot as plt
+
+residuals = (y_pred.values - y_eval_24h.values) / 1000  # in GW
+
+fig, ax = plt.subplots(figsize=(8.5, 3.5))
+ax.hist(residuals, bins=12, color="#1F4E79", alpha=0.85, edgecolor="white")
+ax.axvline(0, color="#000000", linewidth=0.8)
+ax.axvline(+mae / 1000, color="#E07B00", linestyle="--", linewidth=1.2, label=f"+MAE = {mae/1000:.2f} GW")
+ax.axvline(-mae / 1000, color="#E07B00", linestyle="--", linewidth=1.2)
+ax.axvline(+rmse / 1000, color="#2E7D55", linestyle=":", linewidth=1.2, label=f"+RMSE = {rmse/1000:.2f} GW")
+ax.axvline(-rmse / 1000, color="#2E7D55", linestyle=":", linewidth=1.2)
+ax.set_xlabel("Residual (forecast - observed) [GW]")
+ax.set_ylabel("Number of hours")
+ax.legend(loc="upper right", frameon=False)
+ax.grid(True, color="#E5E5E5", linewidth=0.5)
+for s in ("top", "right"):
+    ax.spines[s].set_visible(False)
+fig.tight_layout()
+plt.show()
+```
+
+## When is which measure appropriate?
+
+| Question                                            | Suitable measure |
+|:----------------------------------------------------|:-----------------|
+| How much reserve energy do I need to plan in bulk?  | MAE             |
+| How severe are the rare large errors?               | RMSE or MSE      |
+| How does my system compare to one in another market zone? | MAPE       |
+| Which component of my risk capital is sufficient?   | RMSE plus a quantile bound |
+
+## Comparison with the baseline
+
+Without comparison to a trivial baseline an accuracy number is
+meaningless. We compute the same measures for the weekly persistence:
+
+```{python}
+#| label: baseline-metrics
+#| echo: true
+y_clean = pd.read_parquet(shared / "load_de_2024_clean.parquet")["load"]
+persistence = y_clean.shift(168).loc[y_eval_24h.index]
+
+mae_p  = float((y_eval_24h.values - persistence.values).__abs__().mean())
+mape_p = float(np.mean(np.abs((y_eval_24h.values - persistence.values) / y_eval_24h.values)))
+
+print(f"            Model       Weekly persistence")
+print(f"MAE    {mae:8.1f} MW    {mae_p:8.1f} MW")
+print(f"MAPE   {mape:8.2%}      {mape_p:8.2%}")
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Choosing measures.* Discuss with Claude a concrete use case ("We
+   need the forecast in order to prepare our reserve gas-fired plants
+   tomorrow at 06:00") and have it argue which of the four measures the
+   transmission system operator should include as a KPI in its
+   `MODEL_CARD.md`.
+2. *Own implementation.* Ask Claude to program the four measures by
+   hand with `numpy`, without `calculate_metrics`, and compare them
+   with the library function. What happens when a single actual value
+   is zero (division by zero in MAPE)?
+3. *Robustness to outliers.* Have Claude generate a synthetic 24-h
+   vector in which 23 values are very accurate (error $\pm$ 50 MW) and
+   a single value is far off ($\pm$ 5000 MW). How do MAE and RMSE
+   behave? Which measure shows the "problem" more clearly?
+:::

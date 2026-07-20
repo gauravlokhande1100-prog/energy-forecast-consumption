@@ -1,0 +1,53 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Safety-Critical Time-Series Forecasting with spotforecast2-safe"
+  subtitle: "Lecture notes for students with no prior knowledge of AI regulation"
+  author:
+    - name: "Thomas Bartz-Beielstein"
+      affiliation: "Bartz & Bartz GmbH"
+  date: today
+  language: en
+  chapters:
+    - index.qmd
+    - 01_audit_log.qmd
+    - 02_entsoe_data.qmd
+    - 03_data_annotation.qmd
+    - 04_missing_data.qmd
+    - 05_train_test_split.qmd
+    - 06_calendar_and_weather.qmd
+    - 07_forecaster_training.qmd
+    - 08_forecast.qmd
+    - 09_accuracy.qmd
+    - 10_backtest.qmd
+    - 11_provenance.qmd
+    - 12_challenge.qmd
+    - 13_live_submission.qmd
+    - 14_team_4_submission.qmd
+    - 15_entsoe.qmd
+    - references.qmd
+
+execute:
+  freeze: auto
+  echo: true
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    code-tools: true
+    fig-width: 8
+    fig-height: 4.5
+  pdf:
+    documentclass: scrbook
+    mainfont: "TeX Gyre Termes"
+    keep-tex: true
+    toc: true
+    toc-depth: 3
+
+bibliography: ../bart26hDE.bib
+lang: en

@@ -1,0 +1,59 @@
+# Secrets — never commit
+.env
+
+# uv-managed venv (deps installed via `uv sync`)
+.venv/
+
+# Training caches / logs
+_cache/
+catboost_info/
+
+# IDE / tool artefacts
+.alpackages/
+.snapshots/
+
+# Python build / cache artefacts
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Quarto build artefacts (freeze cache, live API cache).
+# lecture/_book/ is intentionally NOT ignored: the GitLab Pages job in
+# .gitlab-ci.yml publishes lecture/_book/ on the default branch, so the
+# locally rendered HTML must be committed for students to access it
+# without compilation.
+lecture/_freeze/
+lecture/_cache/
+lecture/.quarto/
+
+# Standalone sibling repo (GitHub: bartzbeielstein/challenge-leaderboard),
+# only cloned locally into the working directory. Does not belong in the
+# course GitLab repo.
+challenge-leaderboard/
+lecture/.claude/scheduled_tasks.lock
+lecture/01_audit_log.html
+lecture/index.html
+lecture/site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css
+
+# Local VS Code workspace file (personal editor config)
+lecture/ddmo_lecture.code-workspace
+lecture/01_audit_log.quarto_ipynb_1
+lecture/02_entsoe_data.quarto_ipynb_1
+lecture/03_data_annotation.quarto_ipynb_1
+lecture/04_missing_data.quarto_ipynb_1
+lecture/05_train_test_split.quarto_ipynb_1
+lecture/06_calendar_and_weather.quarto_ipynb_1
+lecture/07_forecaster_training.quarto_ipynb_1
+lecture/08_forecast.quarto_ipynb_1
+lecture/09_accuracy.quarto_ipynb_1
+lecture/10_backtest.quarto_ipynb_1
+lecture/11_provenance.quarto_ipynb_1
+lecture/12_challenge.quarto_ipynb_1
+lecture/13_live_submission.quarto_ipynb_1
+lecture/14_team_4_submission.quarto_ipynb_1
+lecture/index.quarto_ipynb_1
+lecture/*.quarto_ipynb_2
+.claude/scheduled_tasks.lock

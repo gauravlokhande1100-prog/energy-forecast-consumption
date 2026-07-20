@@ -1,0 +1,105 @@
+---
+jupyter: python3
+---
+
+# Switch on the audit log {#sec-audit}
+
+::: {.callout-note title="Learning objective"}
+You can explain *why* a safety-critical library has to keep a record of what it
+does from the very first line of code on, and you can switch on
+`spotforecast2-safe`'s audit log with two lines of code.
+:::
+
+## Why log at all?
+
+Imagine that the load-forecasting system from the introduction really did predict
+65 instead of 72 gigawatts at 08:00, and the grid is therefore severely
+under-supplied. The supervisory authority asks: *Which data were available to the
+model at 06:00, with which hyperparameters was it trained, which version of the
+library was running in production?* If the answers are not in a verifiable log,
+the incident is considered unreconstructable --- and the operator has breached
+their duty under Art. 12 of the AI Act (*record-keeping*).
+
+`spotforecast2-safe` therefore writes every action --- initialisation of the
+forecaster, data download, training run, prediction --- into a structured log.
+We switch this log on *first*, before doing anything else, because the
+initialisation itself is already a log-worthy action. This practice instantiates
+both Art. 12 of the AI Act and the discipline of a structured audit log
+anchored in process rule PR-4. It connects directly to code rule **CR-1**
+(no dead code): every function that is logged *has*, by definition, been
+executed, hence is not dead.
+
+## Code in action
+
+```{python}
+#| label: setup-logger
+#| echo: true
+import logging
+from pathlib import Path
+from spotforecast2_safe.manager.logger import setup_logging
+
+# We write into a project-local log directory:
+log_dir = Path("_cache/logs")
+log_dir.mkdir(parents=True, exist_ok=True)
+
+logger, log_path = setup_logging(level=logging.INFO, log_dir=log_dir)
+logger.info("Course run starts: load-forecasting pipeline (chapter 01).")
+print(f"Log file: {log_path.name if log_path else '<stdout only>'}")
+```
+
+The call returns two things: a `logger`, with which we record every relevant
+action from now on, and a `log_path` pointing to the concrete file where the log
+lives. The default logger name is `task_safe_n_to_1`. From now on every function
+in `spotforecast2-safe` that logs its own steps writes into the same file ---
+without us having to forward where logging happens.
+
+## What is inside the log file?
+
+```{python}
+#| label: log-content
+#| echo: true
+if log_path is not None and log_path.exists():
+    print("--- first line of the log ---")
+    print(log_path.read_text().splitlines()[0])
+else:
+    print("No file handler active; the log only goes to stdout.")
+```
+
+Every entry contains timestamp, logger name, level (INFO/WARNING/ERROR/DEBUG)
+and text. These four fields are enough for a later auditor to reconstruct the
+exact order and content of every action.
+
+## Visualisation: How an audit run unfolds
+
+The following sequence flow shows which actors talk to each other while the
+pipeline renders. You will fill it out step by step in the coming chapters ---
+each chapter adds a new arrow.
+
+```{mermaid}
+sequenceDiagram
+    participant Student
+    participant Pipeline as Pipeline (Quarto)
+    participant Logger
+    participant File as Log file
+
+    Student->>Pipeline: quarto render
+    Pipeline->>Logger: setup_logging()
+    Logger->>File: open, write header
+    Pipeline->>Logger: info("run starts")
+    Logger->>File: append line with timestamp
+    Note over File: later auditor reads here
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Source-code exploration.* Ask Claude to display the source of
+   `spotforecast2_safe.manager.logger.setup_logging` and to explain how the
+   function makes sure that file creation does *not* abort the entire run when
+   the directory is read-only. Which code rule addresses this behaviour?
+2. *Comparison with `print`.* Discuss with Claude why `print()` would be
+   *unsuitable* for an audit log. At least three traceable reasons should be
+   given, each tied to Art. 12 of the AI Act or to one of the four code rules.
+3. *Advanced exercise.* Have Claude write a mini pipeline that performs two
+   training runs with different seeds and, from the audit log alone, figures
+   out in which order the runs took place. Explain why exactly this information
+   is decisive for a later reproduction.
+:::

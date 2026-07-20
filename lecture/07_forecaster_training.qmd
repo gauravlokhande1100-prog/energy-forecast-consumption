@@ -1,0 +1,185 @@
+---
+jupyter: python3
+---
+
+# Instantiate and train the forecaster {#sec-train}
+
+::: {.callout-note title="Learning objective"}
+You can instantiate the class `ForecasterRecursiveLGBM`, equip it with a
+deterministically configured LightGBM estimator, and train it on real load
+and weather data. You understand why code rules **CR-2** (determinism)
+and **CR-4** (minimal CVE attack surface) are crucial in this step.
+:::
+
+## What happens during training?
+
+`ForecasterRecursiveLGBM` is a wrapper around the gradient-boosting
+estimator *LightGBM*. During training the model looks back, for every
+hour *t*, at the last `lags` hours (time steps) and learns a function
+that predicts the value at hour *t* from these past values plus the
+exogenous calendar and weather features. *Recursive* means: in later
+prediction the output for hour *t* is used in turn as input for hour
+*t+1*.
+
+`lags=168` (= 7 x 24) means: the model sees the last full week as
+context for every hour --- decisive for correctly representing the
+weekly rhythm (weekday vs. weekend).
+
+## AI Act link
+
+Art. 9 of the AI Act demands a risk-management system over the entire
+lifecycle; Art. 15 demands an appropriate level of accuracy. Both
+obligations presuppose that the training run is *reproducible*: the
+supervisory authority must be able to reconstruct the model from its
+documented hyperparameters and seed. This is exactly the scope of
+**CR-2**.
+
+**CR-4** forbids a short negative list of dependencies in the package
+(`plotly`, `matplotlib`, `spotoptim`, `optuna`, `torch`, `tensorflow`).
+The estimator LightGBM is *not* on this list --- deliberately: it is
+small, actively maintained, implemented in C++ and brings no additional
+attack surface. A migration to PyTorch or TensorFlow would violate the
+deny-list.
+
+## Code in action
+
+```{python}
+#| label: load-state
+#| echo: true
+import pandas as pd
+from pathlib import Path
+
+shared = Path("_cache/shared")
+y_train = pd.read_parquet(shared / "y_train.parquet")["load"]
+exog    = pd.read_parquet(shared / "exog.parquet")
+
+print(f"Training series: {len(y_train):,} h from {y_train.index[0]} to {y_train.index[-1]}")
+print(f"Exog matrix:     {exog.shape}")
+```
+
+```{python}
+#| label: instantiate-model
+#| echo: true
+from spotforecast2_safe import Period, ForecasterRecursiveLGBM
+from lightgbm import LGBMRegressor
+
+periods = [
+    Period(name="hour",      n_periods=12, column="hour",      input_range=(0, 23)),
+    Period(name="dayofweek", n_periods=4,  column="dayofweek", input_range=(0,  6)),
+    Period(name="month",     n_periods=12, column="month",     input_range=(1, 12)),
+]
+
+model = ForecasterRecursiveLGBM(
+    iteration=0,
+    lags=168,
+    periods=periods,
+    country_code="DE",
+    random_state=2026,
+)
+
+# We replace the default estimator with a richer variant so that the
+# model can reliably learn the annual seasonality. All non-deterministic
+# options are deliberately switched off:
+model.forecaster.estimator = LGBMRegressor(
+    n_estimators=400,
+    learning_rate=0.05,
+    num_leaves=63,
+    min_child_samples=20,
+    n_jobs=-1,
+    verbose=-1,
+    deterministic=True,
+    force_col_wise=True,
+    random_state=model.random_state,
+)
+print(f"Estimator:        {type(model.forecaster.estimator).__name__}")
+print(f"Number of trees:  {model.forecaster.estimator.n_estimators}")
+print(f"Learning rate:    {model.forecaster.estimator.learning_rate}")
+print(f"Lags:             {model.forecaster.lags.size}")
+print(f"Seed:             {model.random_state}")
+```
+
+::: {.callout-note title="CR-2 in practice"}
+The three LightGBM options `deterministic=True`, `force_col_wise=True`
+and a fixed `random_state` together are the *bit-exact* reproducibility
+guarantee. Without these three options LightGBM produces slightly
+different trees across runs, because the order of histogram computation
+becomes non-deterministic --- and that violates code rule CR-2.
+:::
+
+## Run the training
+
+```{python}
+#| label: fit-model
+#| echo: true
+import time
+
+t0 = time.perf_counter()
+model.fit(y=y_train, exog=exog.loc[y_train.index])
+elapsed = time.perf_counter() - t0
+print(f"Training completed in {elapsed:.1f} seconds.")
+print(f"Training index:  {model.forecaster.training_range_[0]}  ...  "
+      f"{model.forecaster.training_range_[1]}")
+```
+
+## Which features shaped the model most strongly?
+
+LightGBM counts for every tree how often each feature was used as a
+split candidate. This *feature importance* is a first, traceable answer
+to the question: *what does the model base its forecast on?* This
+answerability is a core concern of Art. 13 of the AI Act
+(transparency).
+
+```{python}
+#| label: fig-feature-importance
+#| fig-cap: "Top-15 feature importances of the trained LightGBM model, measured as 'split' frequency over all 400 trees. Lag features (`lag_*`) carry the bulk of the information; weather (temperature) and day-of-week encodings supplement them."
+#| echo: true
+import matplotlib.pyplot as plt
+
+feat_names = model.forecaster.estimator.feature_name_
+importances = model.forecaster.estimator.feature_importances_
+
+ranking = sorted(zip(feat_names, importances), key=lambda kv: kv[1], reverse=True)[:15]
+
+fig, ax = plt.subplots(figsize=(8.0, 4.5))
+labels = [n for n, _ in ranking][::-1]
+values = [v for _, v in ranking][::-1]
+ax.barh(labels, values, color="#1F4E79")
+ax.set_xlabel("split count (feature importance)")
+ax.grid(True, axis="x", color="#E5E5E5", linewidth=0.5)
+for s in ("top", "right"):
+    ax.spines[s].set_visible(False)
+fig.tight_layout()
+plt.show()
+```
+
+## Persist model for follow-up chapters
+
+We store the trained model; chapter 08 reads it back and produces the
+24-h forecast.
+
+```{python}
+#| label: persist-model
+#| echo: true
+import pickle
+
+model_path = Path("_cache/forecaster.pkl")
+with model_path.open("wb") as fh:
+    pickle.dump(model, fh)
+print(f"Model persisted: {model_path}")
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *CR-4 deny-list.* Ask Claude to display the deny-list of forbidden
+   dependencies in `spotforecast2-safe`'s `pyproject.toml` and to
+   explain for every entry (`plotly`, `matplotlib`, `spotoptim`,
+   `optuna`, `torch`, `tensorflow`) *why* it is not admissible in a
+   safety-critical library.
+2. *Check determinism.* Have Claude write a short function that trains
+   the model twice in a row on the same data and compares the
+   `feature_importances_` of the two runs bit-by-bit at the end. What
+   should come out under correct CR-2 conformance?
+3. *Hyperparameter awareness.* Discuss with Claude how `lags=24` should
+   qualitatively affect the forecast compared to `lags=168`. Which
+   weekly structure can the model no longer learn with only 24 lag
+   hours?
+:::

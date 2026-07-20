@@ -1,0 +1,184 @@
+---
+jupyter: python3
+---
+
+# Calendar features and real weather data {#sec-calendar}
+
+::: {.callout-note title="Learning objective"}
+You can set up an `ExogBuilder` with cyclic RBF features, read real weather
+data from Open-Meteo via the `WeatherService` class, and concatenate both
+into a single feature matrix that is later passed to the forecaster as
+*exogenous input*.
+:::
+
+## Why does the model need more than the load itself?
+
+The load depends not only on its own immediate history but also on
+*context information*: time of day, day of week, holiday, weather. If the
+model only sees "Wednesday 18:00" and "Wednesday 02:00" as hours 18 and 2,
+it has no way to recognise that these hours stand in a cyclic relationship
+to each other and repeat periodically. We encode such cyclic features
+with *radial basis functions* (RBF) so that an hour is always similar to
+its neighbouring hours --- including the midnight transition.
+
+Weather is the second pillar. In cold weather the load rises (heating,
+lighting); on sunny summer days it falls. The model therefore sees per
+hour a tuple of hourly temperature, cloud cover, precipitation and wind
+speed. The Open-Meteo API provides these values both retrospectively
+(archive) and prospectively (forecast) without an API key.
+
+## AI Act link
+
+Art. 10(1) of the AI Act requires that "training, validation and testing
+data sets [...] meet the quality criteria laid down in paragraphs 2 to 4".
+One of the quality requirements is *representativeness*: the model must
+have seen all relevant seasonal, calendar-related and weather-dependent
+variations. By training the load jointly with calendar and weather
+features, we practically deliver the "examination of statistically
+probable characteristics" demanded by Art. 10(2)(f).
+
+`WeatherService` enforces code rule **CR-3**: any gap in the weather
+data that remains after resampling is reported as `ValueError` --- not
+silently filled.
+
+## Code in action: cyclic calendar features
+
+```{python}
+#| label: cal-features
+#| echo: true
+import pandas as pd
+from pathlib import Path
+from spotforecast2_safe import Period, ExogBuilder
+
+shared = Path("_cache/shared")
+y_train = pd.read_parquet(shared / "y_train.parquet")["load"]
+y_eval  = pd.read_parquet(shared / "y_eval.parquet")["load"]
+
+periods = [
+    Period(name="hour",      n_periods=12, column="hour",      input_range=(0, 23)),
+    Period(name="dayofweek", n_periods=4,  column="dayofweek", input_range=(0,  6)),
+    Period(name="month",     n_periods=12, column="month",     input_range=(1, 12)),
+]
+builder = ExogBuilder(periods=periods, country_code="DE")
+exog_cal = builder.build(y_train.index.min(), y_eval.index.max())
+
+print(f"Calendar features: {exog_cal.shape[0]:,} hours, {exog_cal.shape[1]} columns")
+print(f"Columns:           {list(exog_cal.columns)[:6]} ...")
+```
+
+```{python}
+#| label: fig-rbf
+#| fig-cap: "RBF encoding of the hour of day. Each of the 12 basis functions is centred on a different hour. At every position of the day the activations of all functions sum to one. Midnight is thus 'near' to 23:00 and to 01:00, and the model does not have to learn the jump between hour 23 and hour 0 artificially."
+#| echo: true
+import matplotlib.pyplot as plt
+
+day = exog_cal.loc["2024-03-04 00:00":"2024-03-04 23:00"]
+fig, ax = plt.subplots(figsize=(8.5, 3.0))
+hour_cols = [c for c in day.columns if c.startswith("hour_")]
+for c in hour_cols:
+    ax.plot(range(24), day[c].values, linewidth=1.0, alpha=0.7)
+ax.set_xticks(range(0, 24, 2))
+ax.set_xlabel("Hour of day")
+ax.set_ylabel("RBF activation")
+ax.set_title("12 cyclic basis functions for the hour of day")
+ax.grid(True, color="#E5E5E5", linewidth=0.5)
+for s in ("top", "right"):
+    ax.spines[s].set_visible(False)
+fig.tight_layout()
+plt.show()
+```
+
+## Code in action: weather
+
+For a central German location --- Frankfurt am Main, a typical load
+centre --- we fetch the hourly values. The `WeatherService` class handles
+the cache transparently: the first request goes to the API, subsequent
+identical requests are served from the parquet file.
+
+```{python}
+#| label: weather-fetch
+#| echo: true
+from spotforecast2_safe.weather import WeatherService
+
+cache = Path("_cache") / "weather_de_2024.parquet"
+ws = WeatherService(
+    latitude=50.110924,
+    longitude=8.682127,
+    cache_path=cache,
+    use_forecast=False,         # historical data only - we stay in 2024
+)
+weather = ws.get_dataframe(
+    start=y_train.index.min(),
+    end=y_eval.index.max(),
+    freq="h",
+    fill_missing=False,         # CR-3: fail-safe, no silent imputation
+)
+print(f"Weather frame: {weather.shape[0]:,} hours, {weather.shape[1]} columns")
+print(f"First columns: {list(weather.columns)[:5]} ...")
+print(f"NaN values:    {int(weather.isna().sum().sum())} (should be 0; otherwise CR-3 would have aborted)")
+```
+
+## Looking at weather and load together
+
+```{python}
+#| label: fig-weather-load
+#| fig-cap: "Weekly overlay in mid-March 2024: hourly load (top) and at the same time the 2-metre air temperature in Frankfurt am Main (bottom). On cold nights the load is visibly higher; on warm days the midday peak is dampened."
+#| echo: true
+import matplotlib.dates as mdates
+
+window = slice("2024-03-11", "2024-03-17")
+fig, axes = plt.subplots(2, 1, figsize=(8.5, 4.5), sharex=True)
+
+axes[0].plot(y_train.loc[window].index, y_train.loc[window].values / 1000,
+             color="#1F4E79", linewidth=1.0)
+axes[0].set_ylabel("Load [GW]")
+axes[0].grid(True, color="#E5E5E5", linewidth=0.5)
+
+axes[1].plot(weather.loc[window].index, weather.loc[window]["temperature_2m"].values,
+             color="#E07B00", linewidth=1.0)
+axes[1].set_ylabel("Temperature [degC]")
+axes[1].set_xlabel("Time")
+axes[1].grid(True, color="#E5E5E5", linewidth=0.5)
+axes[1].xaxis.set_major_formatter(mdates.DateFormatter("%a %-d.%-m"))
+
+for ax in axes:
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+fig.tight_layout()
+plt.show()
+```
+
+## Concatenating calendar and weather into a single matrix
+
+The load and the exogenous columns must have exactly the same index,
+otherwise the forecaster later fails. This is a direct consequence of
+**CR-3**: missing index rows would silently become NaN inside `pandas`
+--- and that is exactly what we want to avoid.
+
+```{python}
+#| label: merge-exog
+#| echo: true
+exog = exog_cal.join(weather, how="inner")
+exog = exog.loc[y_train.index.min(): y_eval.index.max()]
+
+print(f"Joined feature matrix: {exog.shape[0]:,} hours, {exog.shape[1]} columns")
+print(f"NaN values:            {int(exog.isna().sum().sum())}")
+
+exog.to_parquet(shared / "exog.parquet")
+print("Saved `exog.parquet` for follow-up chapters.")
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Why RBF?* Ask Claude to show an alternative to the RBF encoding (e.g.
+   `pd.get_dummies`) and to demonstrate on a plot of the midnight
+   transition why this alternative violates cyclic continuity.
+2. *Weather fail-safe.* Have Claude display the source of
+   `WeatherService.get_dataframe`, specifically the spot where the
+   `ValueError` is raised when `fill_missing=False`. What is the exact
+   wording of the error message, and which code rule does this behaviour
+   follow?
+3. *A second city.* Together with Claude extend the pipeline so that
+   *two* weather locations (e.g. Frankfurt and Berlin) are queried and
+   both included in the `exog` matrix with distinct column names. Which
+   question could the improved model answer better?
+:::

@@ -1,0 +1,632 @@
+---
+jupyter: python3
+---
+
+# Live submission to the ddmo-sose-26 challenge {#sec-live-submission}
+
+::: {.callout-note title="Learning objective"}
+You can generate today's 24-hour DE load forecast with the production
+pipeline (`spotforecast2` + `spotforecast2-safe`), write a validated
+submission CSV in the exact schema the leaderboard expects, and open the
+pull request that puts your team on the live ranking at
+<https://bartzbeielstein.github.io/challenge-leaderboard/>.
+:::
+
+## Overview {#sec-live-overview}
+
+Previous chapters walked through every stage of the pipeline against
+a *frozen* 2024 evaluation window. That deterministic, reproducible
+sandbox is exactly what the EU AI Act asks for in the development phase.
+This final chapter is different in two ways: the data is *today's*, and
+the target is `y_0` (tomorrow), not a held-out 2024 window. Everything
+else, i.e., the safety contracts, the assertions, and the fail-loudly semantics,
+carries over.
+
+
+## Submission contract {#sec-live-contract}
+
+The leaderboard repository [`challenge-leaderboard`](https://github.com/bartzbeielstein/challenge-leaderboard)
+accepts one CSV per team per day with the following exact shape:
+
+| Column | Type | Constraint |
+| :--- | :--- | :--- |
+| `timestamp_utc` | ISO 8601 string (`YYYY-MM-DDTHH:MM:SSZ`) | 24 consecutive UTC hourly stamps for the target day |
+| `forecast_mw` | `float` | strictly positive, no NaN, finite |
+
+: Submission CSV schema. {#tbl-live-schema}
+
+File path: `submissions/team_4_optuna/<YYYY-MM-DD>.csv` — the filename is the
+*target* day (the day being forecast), not the submission day. Deadline:
+`D-1 23:59 UTC` (the validator rejects later PRs). Scoring: per-day
+mean absolute error in MW (`MAE = (1/24) Σ |ŷ_h − y_h|`). Public
+ranking: rolling 7-day mean MAE, smallest wins; ties broken first by
+cumulative MAE, then by number of valid submissions.
+
+The implementation is auditable. The load-bearing contract anchors are published on github.com (https://github.com/bartzbeielstein/challenge-leaderboard/tree/main/scripts) and visible in the codebase:
+
+* `validate_schema()` at `scripts/validate_submission.py:53`
+* `validate_deadline()` at `scripts/validate_submission.py:79`
+* `score_submission()` at `scripts/score_day.py:112`
+* `aggregate()` at `scripts/build_leaderboard.py:35`
+* The daily scoring cron at `.github/workflows/score-daily.yml:5`
+
+## Registered teams {#sec-live-teams}
+
+The team registry lives in `challenge-leaderboard/teams.yml`. The cell
+below reads it from the sibling clone and renders the current roster.
+This chapter is wired for the registered team `team_4_optuna`
+(display name "Team 4 Optuna", handle `bartzbeielstein`); swap that
+`team_id` and the GitHub handle for the row that matches your own team
+when you adapt the code:
+
+```{python}
+#| label: live-teams
+#| echo: true
+from pathlib import Path
+import yaml, pandas as pd
+
+teams_yml = Path.home() / "workspace" / "challenge-leaderboard" / "teams.yml"
+teams = yaml.safe_load(teams_yml.read_text())["teams"]
+pd.DataFrame(
+    [{"team_id": t["id"],
+      "display_name": t["display_name"],
+      "github_handles": ", ".join(t["github_handles"])}
+     for t in teams]
+)
+```
+
+The `validate_authorship()` check in `scripts/validate_submission.py:89`
+rejects PRs whose author is not in the team's `github_handles` list, so
+your local `gh auth login` must be the same account.
+
+## Step-by-step student walkthrough {#sec-live-walkthrough}
+
+### Prerequisites
+
+Python 3.13 with [uv](https://docs.astral.sh/uv/) for environment
+management, `git` and the [GitHub CLI](https://cli.github.com/) (`gh`)
+authenticated as your registered handle, a personal
+[ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) API key
+(free; request via *My Account Settings → Web API Security Token*), and
+about 1 GB of free disk for the cached interim ENTSO-E CSV.
+
+### Step 1: Clone the lecture and fork the leaderboard
+
+Assume git@git-ce.rwth-aachen.de:spotseven-lab/ddmo-sose-26.git as the lecture repo URL. The forked leaderboard is where you write your submission CSV and open the PR; the lecture repo is where you run the pipeline and render this chapter.
+
+
+```bash
+mkdir -p ~/workspace && cd ~/workspace
+git clone git@git-ce.rwth-aachen.de:spotseven-lab/ddmo-sose-26.git ddmo-sose-26
+gh repo fork bartzbeielstein/challenge-leaderboard --clone --remote
+```
+
+The fork lets you push your submission branch without write access to
+the upstream. Your PR will come from
+`bartzbeielstein/challenge-leaderboard:submission/team_4_optuna-<YYYY-MM-DD>-<HHMMSS>`
+into `bartzbeielstein/challenge-leaderboard:main`.
+
+### Step 2: Install the pipeline
+
+```bash
+cd ~/workspace/ddmo-sose-26
+uv sync
+```
+
+This installs `spotforecast2-safe>=13.4.1`, `spotforecast2>=2.2.2`, and
+the rest of the dependencies into a local `.venv/`. Quarto reads
+`QUARTO_PYTHON` to find this interpreter (see the lecture's `Makefile`).
+
+### Step 3: Export your ENTSO-E API key
+
+```bash
+export ENTSOE_API_KEY="<your-personal-key-from-transparency.entsoe.eu>"
+```
+
+The live cells below read the key from the environment, never from a
+hard-coded literal in the rendered HTML.
+
+### Step 4: Set your team id
+
+This chapter uses the registered team `team_4_optuna` throughout. The
+`TEAM_ID` constant lives in the submission write cell at
+@sec-live-example; edit it once if you adapt the chapter for a different
+team.
+
+### Step 5: Generate the forecast and write the CSV
+
+Render this chapter (`make render` at the lecture root, or just
+`quarto render lecture/13_live_submission.qmd`). The render writes a
+real CSV at
+`~/workspace/challenge-leaderboard/submissions/team_4_optuna/<tomorrow>.csv`.
+
+### Step 6: Validate locally before pushing
+
+```bash
+cd ~/workspace/challenge-leaderboard
+uv run python scripts/validate_submission.py \
+    --path submissions/team_4_optuna/<YYYY-MM-DD>.csv \
+    --pr-author bartzbeielstein
+```
+
+Exit code 0 means schema, deadline, and authorship all check out. The
+last live cell at @sec-live-example runs this same validator from inside
+the notebook so you see the green output before you ever push.
+
+### Step 7: Open the submission PR
+
+```bash
+cd ~/workspace/challenge-leaderboard
+TARGET=<YYYY-MM-DD>            # e.g. tomorrow's UTC date
+# Unique branch per attempt (avoids colliding with an earlier merged branch
+# if you re-submit for the same target day).
+BRANCH="submission/team_4_optuna-${TARGET}-$(date -u +%H%M%S)"
+git switch -c "$BRANCH" main
+git add "submissions/team_4_optuna/${TARGET}.csv"
+git commit -m "submission(team_4_optuna): forecast for ${TARGET}"
+git push -u origin "$BRANCH"
+gh pr create --base main --repo bartzbeielstein/challenge-leaderboard \
+    --head "$BRANCH" \
+    --title "submission(team_4_optuna): forecast for ${TARGET}" \
+    --body "Generated by the ddmo-sose-26 live submission chapter."
+```
+
+If validation passes, auto-merge squashes the submission onto `main`.
+The next morning at 07:00 UTC, `score-daily.yml` scores it against
+ENTSO-E final actuals and the leaderboard refreshes within a minute.
+
+::: {.callout-warning title="Deadline"}
+Submissions for target day `D` must be merged before `D-1 23:59 UTC` —
+the validator enforces this strictly. The full pipeline (render →
+validate → push → PR → auto-merge) typically completes in under two
+minutes, but ENTSO-E API hiccups during the data refresh can
+occasionally cost a few more. Submit at least 30 minutes before the
+deadline to leave yourself recovery room.
+:::
+
+## Live example — generate ŷ₀ end-to-end {#sec-live-example}
+
+The cells below are the *live* pipeline: every render of this chapter
+downloads today's ENTSO-E actuals, trains a fresh Optuna-tuned
+LightGBM forecaster on the available data, and writes a validated CSV
+into your forked leaderboard's submission slot for tomorrow. Optuna
+drives a Bayesian (TPE) search over the LightGBM hyperparameters; the
+other three approaches (Lazy, Defaults, SpotOptim) are introduced for
+comparison in chapters 07 through 10.
+
+```{python}
+#| label: live-imports
+#| echo: true
+import logging, os
+from pathlib import Path
+import pandas as pd
+
+logging.basicConfig(level=logging.WARNING)
+
+# Isolate this chapter's storage from chapter 14 -----------------------------
+# download_new_data() writes the merged ENTSO-E mirror to
+# <SPOTFORECAST2_DATA>/interim/energy_load.csv, and MultiTask persists tuned
+# models, tuning results, and logs under <SPOTFORECAST2_CACHE>. Both default to
+# a single shared location in $HOME, so chapters 13 and 14 would otherwise read
+# and write the *same* interim download. Pinning per-chapter homes here — before
+# any download or MultiTask call — gives this chapter its own download, cache,
+# and log directory. The package reads both env vars at call time via
+# get_data_home() / get_cache_home(), so setting them now is sufficient.
+os.environ["SPOTFORECAST2_DATA"]  = str(Path.home() / "spotforecast2_data"  / "ddmo_ch13_live")
+os.environ["SPOTFORECAST2_CACHE"] = str(Path.home() / ".spotforecast2_cache" / "ddmo_ch13_live")
+
+from spotforecast2_safe.data import Period
+from spotforecast2_safe.downloader.entsoe import download_new_data
+from spotforecast2_safe.data.fetch_data import get_data_home
+from spotforecast2_safe.configurator.config_entsoe import ConfigEntsoe
+from spotforecast2.tasks.task_entsoe import (
+    entsoe_data_loader,
+    entsoe_test_data_loader,
+    entsoe_lgbm_factory,
+)
+from spotforecast2.multitask import MultiTask
+```
+
+### Dynamic date constants
+
+Every date is derived from `pd.Timestamp.now(tz="UTC").normalize()` so
+the chapter stays correct on every render. The convention follows the
+canonical `bart26b/CLAUDE.md` *Date-range rule*:
+
+- `y_{-1}` = yesterday's 24 hourly DE Actual Load values (UTC day `D-1`)
+- `ŷ_{-1}` = the model's prediction for the same window (used by
+  chapters 08–10 as the scorable exemplar)
+- `y_0` = today's 24 h (UTC day `D`); the *real* live target — not
+  scorable until `~D+1 06:00 UTC` when ENTSO-E publishes final actuals
+
+```{python}
+#| label: live-constants
+#| echo: true
+NOW_UTC = pd.Timestamp.now(tz="UTC")
+TODAY_UTC = NOW_UTC.normalize()
+YESTERDAY_UTC = TODAY_UTC - pd.Timedelta(days=1)
+TOMORROW_UTC = TODAY_UTC + pd.Timedelta(days=1)
+
+START_DOWNLOAD = "202201010000"
+END_DOWNLOAD = NOW_UTC.strftime("%Y%m%d%H%M")   # exclusive upper bound = now (UTC) → includes today's already-published intraday actuals
+
+print(f"NOW_UTC       = {NOW_UTC}")
+print(f"TODAY_UTC     = {TODAY_UTC}")
+print(f"TOMORROW_UTC  = {TOMORROW_UTC}  (target day = y_0)")
+print(f"END_DOWNLOAD  = {END_DOWNLOAD}  (ENTSO-E fetch cutoff = now, UTC)")
+```
+
+### Download today's ENTSO-E actuals
+
+`download_new_data` is incremental: subsequent calls only fetch ranges
+not already on disk. After the call, we verify coverage and abort
+loudly if the merged interim CSV does not extend through `D-1 23:00 UTC`
+— a stale download would silently shorten the prediction window.
+
+```{python}
+#| label: live-download
+#| echo: true
+api_key = os.environ.get("ENTSOE_API_KEY")
+assert api_key, "ENTSOE_API_KEY must be set in the environment (see Step 3 above)."
+
+download_new_data(
+    api_key=api_key,
+    country_code="DE",
+    start=START_DOWNLOAD,
+    end=END_DOWNLOAD,
+    force=False,
+)
+
+interim_csv = get_data_home() / "interim" / "energy_load.csv"
+interim = pd.read_csv(interim_csv, index_col=0, parse_dates=True)
+interim.index = pd.to_datetime(interim.index, utc=True)
+
+required_last = TODAY_UTC - pd.Timedelta(hours=1)
+if interim.index.max() < required_last:
+    raise RuntimeError(
+        f"ENTSO-E coverage is stale: last interim row is {interim.index.max()} "
+        f"but the chapter requires at least {required_last}. "
+        "Re-run download_new_data(..., force=True) or check the ENTSO-E API."
+    )
+print(f"interim CSV last row: {interim.index.max()}")
+print(f"Actual Load tail (last 6 quarter-hours):")
+print(interim["Actual Load"].dropna().tail(6))
+```
+
+### Determine the live training cutoff and forecast horizon
+
+At submission time the ENTSO-E intra-day actuals usually cover only part
+of today, so we cannot anchor `end_train_default` at today 23:00 UTC.
+Instead we anchor at the latest hour for which `Actual Load` is
+non-NaN, floor it to a clean hour boundary, and compute how many hourly
+forecast steps we need to reach the end of tomorrow. After training we
+slice tomorrow's 24 hourly steps out of the longer forecast — those are
+the `y_0` rows we submit.
+
+```{python}
+#| label: live-cutoff
+#| echo: true
+LAST_TARGET = TOMORROW_UTC + pd.Timedelta(hours=23)
+LAST_FULL_HOUR = interim["Actual Load"].dropna().index.max().floor("h")
+FIRST_PRED = LAST_FULL_HOUR + pd.Timedelta(hours=1)
+LIVE_N_STEPS = int((LAST_TARGET - FIRST_PRED).total_seconds() // 3600) + 1
+
+print(f"end_train (inclusive): {LAST_FULL_HOUR}")
+print(f"first forecast step  : {FIRST_PRED}")
+print(f"last forecast step   : {LAST_TARGET}")
+print(f"predict_size         : {LIVE_N_STEPS}  (slice last 24 for y_0)")
+```
+
+::: {.callout-note title="Why is `predict_size` usually larger than 24?"}
+`predict_size` is **not** "how many hours we want to submit." It is the
+number of hourly steps the recursive forecaster must produce, starting
+at the first hour *after* the last known actual, until it reaches the
+end of tomorrow. The 24 rows we submit are then *sliced out of* that
+longer forecast.
+
+The math, step by step:
+
+$$
+\begin{aligned}
+\texttt{FIRST\_PRED}  &= \texttt{LAST\_FULL\_HOUR} + 1\,\text{h} \\
+\texttt{LAST\_TARGET} &= \texttt{TOMORROW\_UTC} + 23\,\text{h} \\
+\texttt{LIVE\_N\_STEPS} &= \frac{\texttt{LAST\_TARGET} - \texttt{FIRST\_PRED}}{1\,\text{h}} + 1
+\end{aligned}
+$$
+
+The `+ 1` is because both endpoints are inclusive (we need the hour
+`FIRST_PRED` *and* the hour `LAST_TARGET`).
+
+Decomposing the horizon into two segments makes it obvious where the
+extra steps come from:
+
+$$
+\underbrace{\texttt{LIVE\_N\_STEPS}}_{\text{total recursion}}
+= \underbrace{(24 - \texttt{LAST\_FULL\_HOUR.hour} - 1)}_{\text{bridge: rest of today}}
++ \underbrace{24}_{y_0:\text{ tomorrow}}
+$$
+
+A worked example. Suppose the chapter is rendered at 18:30 UTC and
+ENTSO-E's intra-day feed currently publishes `Actual Load` through
+**17:00 UTC** today. Then:
+
+- `LAST_FULL_HOUR`  = today 17:00 UTC
+- `FIRST_PRED`     = today 18:00 UTC
+- `LAST_TARGET`    = tomorrow 23:00 UTC
+- bridge hours     = `24 - 17 - 1 = 6` (today 18:00, 19:00, 20:00, 21:00, 22:00, 23:00)
+- target hours     = 24 (tomorrow 00:00 … 23:00)
+- `LIVE_N_STEPS`   = `6 + 24 = 30`
+
+Why can't we just ask the model for 24 steps and start at tomorrow
+00:00? Because the LightGBM forecaster behind `entsoe_lgbm_factory` is
+**recursive**: its feature row for hour $h+1$ uses the lag-1 value
+$\hat{y}_h$ that it produced one step earlier (together with lag-2,
+lag-24, calendar, and weather features). It cannot "jump" over the 6
+bridge hours; each prediction is built from the chain of preceding
+predictions. The bridge hours are scaffolding the recursion needs to
+reach tomorrow — once it has, the next cell slices them off:
+
+```python
+y0 = future.loc[TOMORROW_UTC:LAST_TARGET]   # exactly 24 rows
+```
+
+So `LIVE_N_STEPS` floats with how fresh ENTSO-E's feed happens to be at
+render time:
+
+| Render time (UTC) | `LAST_FULL_HOUR` | Bridge hours | `LIVE_N_STEPS` |
+|:--|:--|--:|--:|
+| 00:30 (feed current through 23:00 of *previous* day) | yesterday 23:00 | 24 (all of today) | 48 |
+| 12:30 (feed current through 11:00) | today 11:00 | 12 | 36 |
+| 18:30 (feed current through 17:00) | today 17:00 | 6 | 30 |
+| 23:30 (feed current through 22:00) | today 22:00 | 1 | 25 |
+| just after midnight (feed already current through 23:00 of *previous* day) | yesterday 23:00 | 24 | 48 |
+
+The submission CSV still has exactly 24 rows in every case — only the
+amount of throwaway bridge forecasting changes.
+:::
+
+### Build the live `ConfigEntsoe` {#sec-live-config}
+
+All inputs to the pipeline travel on a single configuration object.
+The hooks (`data_loader`, `test_data_loader`, `forecaster_factory`) are
+the same ones the bart26b publication uses. The training-window
+parameters and tuning budgets follow the canonical defaults. The `ConfigEntsoe` documentation is at https://sequential-parameter-optimization.github.io/spotforecast2-safe/docs/reference/configurator.config_entsoe.ConfigEntsoe.html
+
+We pass `cv_block_size=PREDICT_SIZE` (= 24) so the rolling cross-validation
+scores a fixed 24-hour-ahead block, decoupled from the render-dependent live
+horizon `predict_size=LIVE_N_STEPS`. Chapter 14 derives why this matters at
+@sec-cross-validation-geometry.
+
+```{python}
+#| label: live-config
+#| echo: true
+TRAIN_SIZE = pd.Timedelta(days=365 * 3)
+PREDICT_SIZE = 24
+REFIT_SIZE = 7
+NUMBER_FOLDS = 10
+DELTA_VAL = pd.Timedelta(hours=PREDICT_SIZE * REFIT_SIZE * NUMBER_FOLDS)
+
+live_config = ConfigEntsoe(
+    country_code="DE",
+    data_filename="interim/energy_load.csv",
+    targets=["Actual Load"],
+    agg_weights=[1.0],
+    bounds=[(-1e9, 1e9)],
+    data_loader=entsoe_data_loader,
+    test_data_loader=entsoe_test_data_loader,
+    forecaster_factory=entsoe_lgbm_factory,
+    periods=[Period(name='daily', n_periods=12, column='hour', input_range=(1, 24))],
+    lags_consider=[1, 2, 24],
+    train_size=TRAIN_SIZE,
+    end_train_default=LAST_FULL_HOUR.isoformat(),
+    delta_val=DELTA_VAL,
+    predict_size=LIVE_N_STEPS,
+    cv_block_size=PREDICT_SIZE,
+    refit_size=REFIT_SIZE,
+    n_trials_optuna=30,
+    n_trials_spotoptim=7,
+    n_initial_spotoptim=5,
+    random_state=42,
+    on_weather_failure="skip",
+)
+live_config.data_frame_name = "ddmo-live"
+print("live_config ready:", live_config.data_frame_name,
+      "predict_size=", live_config.predict_size,
+      "end_train_default=", live_config.end_train_default)
+```
+
+### Train with Optuna and predict forward through tomorrow
+
+The MultiTask orchestrator runs the full pipeline: prepare data,
+detect outliers, impute, build exogenous (calendar / day-night /
+weather / holiday) features, tune hyperparameters with Optuna, fit
+the final forecaster, and return a *prediction package*. The raw
+forecast covers `[LAST_FULL_HOUR + 1 h, LAST_TARGET]`; we then slice
+the 24 hourly rows for tomorrow.
+
+```{python}
+#| label: live-train
+#| echo: true
+live_mt = MultiTask(live_config, task="optuna")
+live_mt.prepare_data()
+live_mt.detect_outliers()
+live_mt.impute()
+live_mt.build_exogenous_features()
+live_mt.run(show=False)
+
+future = live_mt.results["optuna"]["Actual Load"]["future_pred"]
+print(f"raw forecast: {len(future)} hourly steps "
+      f"| {future.index.min()} → {future.index.max()}")
+
+y0 = future.loc[TOMORROW_UTC:LAST_TARGET]
+print(f"y_0 slice   : {len(y0)} hourly steps "
+      f"| {y0.index.min()} → {y0.index.max()}")
+```
+
+### Visual Inspection
+
+Before writing the CSV, plot the prediction package with
+`spotforecast2.plots.plotter.make_plot`. The figure overlays the actual
+ENTSO-E load (training window plus whatever final actuals are already
+available), the model's in-sample fit, the out-of-sample forecast
+through tomorrow, and a last-week shift for weekly-seasonality context.
+The vertical dashed line at `end_train` separates the historical region
+from the live forecast — the 24 rows we are about to submit sit to the
+right of it.
+
+```{python}
+#| label: fig-live-predict
+#| echo: true
+#| cache: false
+#| fig-cap: "Live ENTSO-E DE load forecast — training fit (left of the dashed line) and the recursive forecast through tomorrow 23:00 UTC (right). The 24 hourly values for `y_0` are the rightmost block."
+from spotforecast2.plots.plotter import make_plot
+
+pkg = live_mt.results["optuna"]["Actual Load"]
+print("future_pred :", len(pkg["future_pred"]), "rows,",
+      pkg["future_pred"].index.min(), "→", pkg["future_pred"].index.max())
+print("metrics_future         :", pkg.get("metrics_future"))
+print("metrics_future_one_day :", pkg.get("metrics_future_one_day"))
+
+fig = make_plot(pkg)
+fig.show()
+```
+
+### Validate the schema and write the submission CSV
+
+Four contract assertions guard the write: 24 rows, the first stamp must
+be `TOMORROW 00:00 UTC`, every value strictly positive, no NaN. Any
+violation aborts before the file is opened, so a partially-written CSV
+can never reach the leaderboard. After the assertions, the cell writes
+the file into your local clone of the leaderboard fork.
+
+```{python}
+#| label: live-submission-write
+#| echo: true
+assert len(y0) == 24,           f"expected 24 hourly steps for y_0, got {len(y0)}"
+assert y0.index.min() == TOMORROW_UTC, (
+    f"first step {y0.index.min()} != TOMORROW {TOMORROW_UTC}"
+)
+assert (y0 > 0).all(),          "non-positive forecast value — spec requires > 0"
+assert y0.notna().all(),        "NaN in forecast — spec forbids"
+
+TEAM_ID = "team_4_optuna"       # registered team; edit once if you adapt this chapter
+SUBMISSION_DIR = Path.home() / "workspace" / "challenge-leaderboard" / "submissions" / TEAM_ID
+SUBMISSION_DIR.mkdir(parents=True, exist_ok=True)
+submission_path = SUBMISSION_DIR / f"{TOMORROW_UTC.date().isoformat()}.csv"
+
+submission_df = pd.DataFrame({
+    "timestamp_utc": y0.index.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "forecast_mw":   y0.round(2).values,
+})
+submission_df.to_csv(submission_path, index=False)
+print(f"wrote {submission_path}")
+print(f"  rows: {len(submission_df)}")
+print(f"  range: {submission_df.forecast_mw.min():.1f}–{submission_df.forecast_mw.max():.1f} MW")
+submission_df.head(3)
+```
+
+### Local validation with the leaderboard's own script
+
+A green exit code from `validate_submission.py` is the same check that
+runs on the PR in CI. We pass `--skip-deadline` because the chapter may
+be rendered inside the deadline window (the live CI uses the strict
+form without the flag).
+
+```{python}
+#| label: live-validate
+#| echo: true
+import subprocess
+lb_repo = Path.home() / "workspace" / "challenge-leaderboard"
+result = subprocess.run(
+    [
+        "uv", "run", "python", "scripts/validate_submission.py",
+        "--path", str(submission_path.relative_to(lb_repo)),
+        "--skip-deadline",
+    ],
+    cwd=lb_repo,
+    capture_output=True,
+    text=True,
+)
+print("exit code:", result.returncode)
+print("stdout   :", result.stdout.strip())
+if result.stderr.strip():
+    print("stderr   :", result.stderr.strip())
+```
+
+## Commit and push the submission PR {#sec-team4-optuna-push}
+
+The cells above only *write* the CSV --- they deliberately do not
+commit, push, or open the PR (a careless render must not be able to
+spam the leaderboard). Run the block below from a shell once the
+validation cell above is green:
+
+```bash
+cd ~/workspace/challenge-leaderboard
+# TARGET=$(date -u -d 'tomorrow' +%F)                # Linux equivalent
+TARGET=$(date -u -v+1d +%F)
+# Unique branch per attempt: re-submitting for the same target day must not
+# collide with an earlier (already-merged) branch of the same name.
+BRANCH="submission/team_4_optuna-${TARGET}-$(date -u +%H%M%S)"
+git switch -c "$BRANCH" main
+git add "submissions/team_4_optuna/${TARGET}.csv"
+git commit -m "submission(team_4_optuna): forecast for ${TARGET}"
+git push -u origin "$BRANCH"
+
+gh pr create --base main --repo bartzbeielstein/challenge-leaderboard \
+    --head "$BRANCH" \
+    --title "submission(team_4_optuna): forecast for ${TARGET}" \
+    --body  "Generated by ddmo-sose-26 chapter 14 (team_4_optuna advanced submission)."
+```
+
+If validation on the PR passes, auto-merge squashes the submission
+onto `main`. The next morning at 07:00 UTC the leaderboard's
+`score-daily.yml` cron (see @sec-live-cron) scores it against ENTSO-E
+final actuals.
+
+::: {.callout-warning title="Deadline"}
+Submissions for target day `D` must be merged before `D-1 23:59 UTC`
+--- the validator enforces this strictly. The advanced configuration
+in this chapter renders in 5--10 minutes on a typical laptop; give
+yourself at least 30 minutes of head-room before the deadline.
+:::
+
+
+## What the render did NOT do {#sec-live-not-rendered}
+
+The cells above only write the CSV. They do not commit, push, or open a
+PR — those are deliberate operator steps so a careless render cannot
+spam the leaderboard. The bash recipe in @sec-live-walkthrough step 7
+is the manual hand-off; once the PR is opened, the leaderboard's CI
+(see @sec-live-cron) takes over.
+
+## Tomorrow's scoring {#sec-live-cron}
+
+The leaderboard's daily cron is configured at `.github/workflows/score-daily.yml:5`:
+
+```
+cron: "0 7 * * *"
+```
+
+That is 07:00 UTC every day. The cron fetches ENTSO-E final actuals for
+yesterday (= the target day of the submission you just opened), computes
+per-team MAE, opens a bot PR that updates `data/scores.parquet`, and
+triggers `build-and-deploy.yml` which republishes
+<https://bartzbeielstein.github.io/challenge-leaderboard/>. End-to-end
+latency from your PR merge to a refreshed leaderboard row is typically
+under 90 seconds after `D+1 07:00 UTC`.
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Swap in your own model.* Replace `forecaster_factory=entsoe_lgbm_factory`
+   in the live config with a custom factory that returns a
+   `ForecasterRecursive(estimator=…)` of your choice (XGBoost, Prophet,
+   a naïve last-week baseline). Anything that produces 24 strictly
+   positive hourly values for the target UTC day will score.
+2. *Tighten the tuning budget.* Change `n_trials_optuna` from 15 to
+   3, re-render, and see whether the resulting forecast deviates
+   noticeably. Discuss with Claude how a small budget can still beat
+   defaults if the search space is well-shaped.
+3. *Read the failure modes.* Look up the S1–S7 failure-mode taxonomy in
+   the bart26b publication (table after `@sec-exo-failure-modes`).
+   Which scenario applies if Open-Meteo is unreachable during the cell
+   above? Trace what happens to your CSV in that case.
+:::

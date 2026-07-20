@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../../spotforecast2"
+		},
+		{
+			"path": "../../../spotforecast2-safe"
+		},
+		{
+			"path": "../../../spotprivate/Publications/bart26b_spotforecast2_entsoe"
+		},
+		{
+			"path": "../../../challenge-leaderboard"
+		}
+	],
+	"settings": {}
+}

@@ -1,0 +1,116 @@
+---
+jupyter: python3
+---
+
+# Separating training and evaluation range {#sec-split}
+
+::: {.callout-note title="Learning objective"}
+You understand why a random split is wrong for time series, and you can
+perform a clean chronological train/test split.
+:::
+
+## Why not split randomly?
+
+In classical supervised learning (e.g. image classification) the dataset is
+split randomly into training and test ranges. For *time series* this is a
+mistake: every value knows its past, and a randomly drawn training set would
+contain *future* hours from which the model implicitly learns to predict
+*past* hours. The accuracy measurement would be self-deception; it would
+collapse dramatically in live operation.
+
+We therefore split *chronologically*: a contiguous initial segment is used
+for training, a contiguous final segment for evaluation. This split is the
+simplest variant of a representativeness check demanded by Art. 10(2)(f)
+and (g) of the AI Act. Code rule **CR-2** (determinism) additionally
+requires the cut point to be fixed as a constant --- not random, but
+reproducible.
+
+## Code in action
+
+We take the series cleaned in @sec-missing and define January to October
+2024 as the training range and November as the evaluation range.
+
+```{python}
+#| label: split-data
+#| echo: true
+import pandas as pd
+from pathlib import Path
+
+shared = Path("_cache/shared")
+y_clean = pd.read_parquet(shared / "load_de_2024_clean.parquet")["load"]
+
+TRAIN_END = pd.Timestamp("2024-10-31 23:00", tz="UTC")
+EVAL_END  = pd.Timestamp("2024-11-30 23:00", tz="UTC")
+
+y_train = y_clean.loc[:TRAIN_END]
+y_eval  = y_clean.loc[TRAIN_END + pd.Timedelta(hours=1) : EVAL_END]
+
+print(f"Training:    {y_train.index[0]}  to  {y_train.index[-1]}  "
+      f"({len(y_train):,} h)")
+print(f"Evaluation:  {y_eval.index[0]}  to  {y_eval.index[-1]}  "
+      f"({len(y_eval):,} h)")
+```
+
+We persist the cut points so that all following chapters use exactly the
+same split:
+
+```{python}
+#| label: persist-split
+#| echo: true
+y_train.to_frame("load").to_parquet(shared / "y_train.parquet")
+y_eval.to_frame("load").to_parquet(shared / "y_eval.parquet")
+(shared / "split_meta.json").write_text(
+    f'{{"train_end":"{TRAIN_END.isoformat()}",'
+    f'"eval_end":"{EVAL_END.isoformat()}",'
+    f'"freq":"h","tz":"UTC"}}'
+)
+```
+
+## Visualisation: the split on the time axis
+
+```{python}
+#| label: fig-split
+#| fig-cap: "Chronological train/test split of the cleaned 2024 load series. Training range (blue): January to October. Evaluation range (orange): November. December (grey) is held back as a reserve for future follow-up experiments. The dashed line marks the cut point."
+#| echo: true
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.patches as mpatches
+
+fig, ax = plt.subplots(figsize=(8.5, 3.0))
+ax.plot(y_train.index, y_train.values / 1000,
+        color="#1F4E79", linewidth=0.4, label="Training")
+ax.plot(y_eval.index, y_eval.values / 1000,
+        color="#E07B00", linewidth=0.6, label="Evaluation")
+
+reserve_idx = y_clean.loc[EVAL_END + pd.Timedelta(hours=1):].index
+ax.plot(reserve_idx, y_clean.loc[reserve_idx].values / 1000,
+        color="#999999", linewidth=0.4, label="Reserve")
+
+ax.axvline(TRAIN_END, color="#555555", linestyle="--", linewidth=0.7)
+ax.axvline(EVAL_END,  color="#555555", linestyle="--", linewidth=0.7)
+ax.set_ylabel("Load [GW]")
+ax.set_xlabel("Time")
+ax.grid(True, color="#E5E5E5", linewidth=0.5)
+ax.xaxis.set_major_locator(mdates.MonthLocator())
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+ax.legend(loc="upper left", frameon=False)
+for s in ("top", "right"):
+    ax.spines[s].set_visible(False)
+fig.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Why chronologically?* Have Claude show on a small concrete example
+   (e.g. a 10-value series) what goes wrong if you split randomly instead
+   of chronologically. Which metrics from Art. 15 of the AI Act are
+   thereby falsified?
+2. *Cut point as contract.* Discuss with Claude why `TRAIN_END` should
+   live as a *constant* in a separate file (or at the very top of the
+   notebook) rather than being scattered through the code. Which code
+   rule does this practice follow?
+3. *Robustness.* Ask Claude to show a variant in which the split is not
+   performed once but multiple times at different cut-off dates (e.g.
+   monthly rolling). How does the informativeness of the accuracy
+   measurement change?
+:::

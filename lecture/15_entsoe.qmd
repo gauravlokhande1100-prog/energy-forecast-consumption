@@ -1,0 +1,452 @@
+---
+jupyter: python3
+---
+
+# ENTSO-E day-ahead baseline submission {#sec-entsoe-submission}
+
+::: {.callout-note title="Learning objective"}
+You can submit the *transmission system operators' own* 24-hour DE load
+forecast --- ENTSO-E's published day-ahead `Forecasted Load` --- as a
+zero-model baseline on the live leaderboard, under the registered team
+`entsoe`. The chapter shows why this baseline is the honest yardstick
+every tuned forecaster in @sec-live-submission and @sec-team4-submission
+must beat, and writes the validated CSV into the leaderboard fork.
+:::
+
+## Overview {#sec-entsoe-overview}
+
+@sec-live-submission tunes an Optuna LightGBM forecaster; @sec-team4-submission
+tunes a richer SpotOptim variant. Both pull ENTSO-E's own day-ahead
+`Forecasted Load` purely as a comparison overlay (@sec-team4-vs-entsoe) and
+never let the model train on it. This chapter inverts that relationship: it
+submits ENTSO-E's day-ahead forecast *directly*, with no model at all.
+
+That is deliberate. ENTSO-E aggregates the forecasts the European
+transmission system operators already produce for grid scheduling, so it is a
+strong, free, professionally-maintained baseline. A tuned model that cannot
+beat it over the rolling 7-day window is not earning its compute. Submitting
+it as its own team `entsoe` puts that yardstick on the public leaderboard
+next to the student models, where the comparison is unavoidable.
+
+Every safety contract from @sec-live-submission carries over unchanged
+(24-row schema, strictly-positive forecasts, no NaN). What disappears is the
+entire modelling stack: no `MultiTask`, no `ConfigEntsoe`, no tuning, no
+exogenous features. The forecast is a slice of the downloaded ENTSO-E frame.
+Two wrinkles specific to a *forward* baseline are handled along the way --- the
+safe downloader drops future rows unless asked to keep them
+(@sec-entsoe-query), and a UTC target day straddles two local publication days
+(@sec-entsoe-extract).
+
+## Submission contract
+
+Unchanged --- see @sec-live-contract for the CSV schema, deadline, and
+scoring rules. The leaderboard validator that runs against this chapter's
+output is byte-identical to the one used by @sec-live-submission. The only
+difference is the path: `submissions/entsoe/<YYYY-MM-DD>.csv`.
+
+## Team identity {#sec-entsoe-identity}
+
+`entsoe` is hardcoded throughout this chapter --- there is no placeholder to
+edit. The cell below confirms the team is registered in
+`challenge-leaderboard/teams.yml`.
+
+```{python}
+#| label: entsoe-registry
+#| echo: true
+from pathlib import Path
+import yaml
+
+teams_yml = Path.home() / "workspace" / "challenge-leaderboard" / "teams.yml"
+teams = yaml.safe_load(teams_yml.read_text())["teams"]
+team = next((t for t in teams if t["id"] == "entsoe"), None)
+assert team is not None, "entsoe is not in challenge-leaderboard/teams.yml"
+print(f"entsoe display_name : {team['display_name']}")
+print(f"entsoe github       : {', '.join(team['github_handles'])}")
+```
+
+`validate_authorship()` in `scripts/validate_submission.py:89` rejects PRs
+whose author is not in this `github_handles` list, so the `gh auth login`
+account used in @sec-entsoe-push must match.
+
+## Prerequisites and walkthrough
+
+Identical to @sec-live-walkthrough: Python 3.13 + uv, a personal ENTSO-E API
+key exported as `ENTSOE_API_KEY`, `gh auth login` as a registered `entsoe`
+handle, and a sibling clone of `challenge-leaderboard` at
+`~/workspace/challenge-leaderboard/`. Because there is no model to train, this
+chapter renders in seconds --- it issues a single API call and slices it.
+
+## Live pipeline {#sec-entsoe-example}
+
+```{python}
+#| label: entsoe-imports
+#| echo: true
+import os
+from pathlib import Path
+import pandas as pd
+
+# Isolate this chapter's storage from chapters 13 and 14 (each pins its own
+# download home so the three chapters never read or write the same interim
+# file). The package reads the env var at call time via get_data_home().
+os.environ["SPOTFORECAST2_DATA"]  = str(Path.home() / "spotforecast2_data"  / "ddmo_ch15_entsoe")
+os.environ["SPOTFORECAST2_CACHE"] = str(Path.home() / ".spotforecast2_cache" / "ddmo_ch15_entsoe")
+
+from spotforecast2_safe.downloader.entsoe import download_new_data
+from spotforecast2_safe.data.fetch_data import get_data_home
+
+api_key = os.environ.get("ENTSOE_API_KEY")
+assert api_key, "ENTSOE_API_KEY must be set in the environment (see @sec-live-walkthrough Step 3)."
+```
+
+### Dynamic date constants
+
+Every date is derived from `pd.Timestamp.now(tz="UTC").normalize()` so the
+chapter stays correct on every render --- same convention as @sec-live-example.
+`y_0` is tomorrow's UTC day (00:00–23:00 UTC), the 24 hourly stamps the
+leaderboard scores.
+
+```{python}
+#| label: entsoe-constants
+#| echo: true
+NOW_UTC = pd.Timestamp.now(tz="UTC")
+TODAY_UTC = NOW_UTC.normalize()
+TOMORROW_UTC = TODAY_UTC + pd.Timedelta(days=1)
+LAST_TARGET = TOMORROW_UTC + pd.Timedelta(hours=23)
+
+# A day-ahead baseline needs no training history --- only a short recent window:
+# enough to carry the last week of `Actual Load` for the context plot plus a
+# previous-day fallback (@sec-entsoe-extract). We download the last 10 days and
+# reach the end through the day *after* tomorrow so the full target day is
+# covered as soon as ENTSO-E publishes it. download_new_data takes the window as
+# 'YYYYMMDDHH00' strings.
+START_DOWNLOAD = (TODAY_UTC - pd.Timedelta(days=10)).strftime("%Y%m%d%H%M")
+END_DOWNLOAD = (TOMORROW_UTC + pd.Timedelta(days=1)).strftime("%Y%m%d%H%M")
+
+print(f"NOW_UTC        = {NOW_UTC}")
+print(f"TODAY_UTC      = {TODAY_UTC}")
+print(f"TOMORROW_UTC   = {TOMORROW_UTC}  (target day = y_0)")
+print(f"LAST_TARGET    = {LAST_TARGET}")
+print(f"START_DOWNLOAD = {START_DOWNLOAD}  (10 days back --- no training history)")
+print(f"END_DOWNLOAD   = {END_DOWNLOAD}  (covers tomorrow's day-ahead forecast)")
+```
+
+### Download ENTSO-E's day-ahead `Forecasted Load` {#sec-entsoe-query}
+
+We fetch through the same safe wrapper the training chapters use,
+`spotforecast2_safe.downloader.entsoe.download_new_data`, with one argument
+that matters here: `keep_forecast_future=True`. By default the wrapper drops
+every row after `now` when it merges the download into the interim file ---
+
+```python
+# spotforecast2_safe/downloader/entsoe.py
+if not keep_forecast_future:
+    merged_df = merged_df.loc[merged_df.index <= pd.Timestamp.now(tz="UTC")]
+```
+
+That truncation is correct for the training chapters (a model must never see
+the future), but it would erase the very thing this baseline submits: ENTSO-E's
+day-ahead `Forecasted Load` for tomorrow. The flag keeps those future rows;
+future `Actual Load` is still blank, so nothing leaks --- there is no model
+here in any case. ENTSO-E's `Forecasted Load` is published per *local*
+(Europe/Berlin) day; the wrapper normalises the merged interim index to UTC,
+the zone the leaderboard scores in.
+
+```{python}
+#| label: entsoe-query
+#| echo: true
+download_new_data(
+    api_key=api_key,
+    country_code="DE",
+    start=START_DOWNLOAD,
+    end=END_DOWNLOAD,
+    force=True,
+    keep_forecast_future=True,   # keep tomorrow's day-ahead forecast
+)
+
+interim_csv = get_data_home() / "interim" / "energy_load.csv"
+interim = pd.read_csv(interim_csv, index_col=0, parse_dates=True)
+interim.index = pd.to_datetime(interim.index, utc=True)
+
+print(f"interim rows       : {len(interim)} (15-min, {interim.index.min()} → {interim.index.max()})")
+print(f"columns            : {list(interim.columns)}")
+print(f"Forecasted Load to : {interim['Forecasted Load'].dropna().index.max()}")
+print(f"Actual Load to     : {interim['Actual Load'].dropna().index.max()}")
+```
+
+We aggregate the 15-minute series onto the hourly grid the leaderboard scores
+on --- the mean of each hour's four quarter-hour values, matching how the
+tuned chapters aggregate the actuals.
+
+```{python}
+#| label: entsoe-hourly
+#| echo: true
+forecast_h = interim["Forecasted Load"].resample("h").mean().dropna()
+actual_h = interim["Actual Load"].resample("h").mean().dropna()
+forecast_h.name = "Forecasted Load"
+actual_h.name = "Actual Load"
+
+print(f"hourly forecast : {len(forecast_h)} h | {forecast_h.index.min()} → {forecast_h.index.max()}")
+print(f"hourly actual   : {len(actual_h)} h | {actual_h.index.min()} → {actual_h.index.max()}")
+```
+
+### Assemble the 24-hour target slice {#sec-entsoe-extract}
+
+The target is the 24 UTC hours of tomorrow, `00:00 … 23:00`. ENTSO-E publishes
+its day-ahead forecast per *local* (Europe/Berlin) day, and Germany runs one
+or two hours ahead of UTC. So at submission time --- the afternoon of `D-1`,
+when only the local `D` day-ahead is out --- the last one or two UTC hours of
+the target (`22:00`, `23:00` UTC) fall into the *next* local day, which ENTSO-E
+does not publish until `D`, after the `D-1 23:59 UTC` deadline.
+
+Those trailing hours are therefore filled with ENTSO-E's own forecast for the
+same clock hour 24 hours earlier --- a transparent, fully reproducible
+persistence of the operators' published forecast. The fill is logged. If even
+the 24 h-earlier fallback is missing --- the feed is too thin to assemble a
+clean 24-hour slice --- the fail-loud guard (CR-3) skips the submission for this
+render, writing no CSV, rather than emitting a short or NaN-padded one. The skip
+is render-safe: the shortfall is caught so it never aborts the book build (an
+unhandled `raise` would fail the whole `quarto render` and leave `_book`
+half-written), and a `SUBMISSION_READY` flag carries the decision to the plot,
+write, and validation cells. Re-render once the target day's day-ahead forecast
+is published.
+
+```{python}
+#| label: entsoe-extract
+#| echo: true
+target_index = pd.date_range(TOMORROW_UTC, LAST_TARGET, freq="h", tz="UTC")  # 24 stamps
+y0 = forecast_h.reindex(target_index)
+
+published = int(y0.notna().sum())
+missing = y0.index[y0.isna()]
+print(f"day-ahead hours published for {TOMORROW_UTC.date()}: {published} / 24")
+
+# Fail-loud (CR-3) but render-safe. If ENTSO-E coverage is too thin to assemble
+# a clean 24-hour slice, we must NOT write a short / NaN-padded CSV — but we
+# also must not abort the Quarto build, which would leave the whole book
+# half-rendered (the partial render even breaks the _book file moves). So we
+# catch the shortfall, flag the submission as not ready, and let every
+# downstream cell skip gracefully. SUBMISSION_READY gates them; re-render once
+# the target day's day-ahead forecast is published.
+SUBMISSION_READY = True
+try:
+    for ts in missing:
+        fallback = forecast_h.reindex([ts - pd.Timedelta(days=1)]).iloc[0]
+        if pd.isna(fallback):
+            raise RuntimeError(
+                f"No day-ahead value for {ts} and no 24 h-earlier fallback either; "
+                "ENTSO-E coverage is too thin to assemble 24 hours."
+            )
+        y0.loc[ts] = fallback
+        print(f"  filled {ts} ← {ts - pd.Timedelta(days=1)} (24 h-earlier ENTSO-E forecast = {fallback:,.0f} MW)")
+
+    y0.name = "Forecasted Load"
+    print(f"\ny_0 assembled: {len(y0)} hourly steps | {y0.index.min()} → {y0.index.max()}")
+    print(y0)
+except Exception as exc:                     # noqa: BLE001 — render must survive any data gap
+    SUBMISSION_READY = False
+    y0 = None
+    print("\n⚠  ENTSO-E coverage insufficient — skipping the submission this render.")
+    print(f"   {exc}")
+    print("   Re-render once the day-ahead forecast for the target day is published.")
+```
+
+### Visual inspection
+
+The plot overlays the last week of published `Actual Load` (blue) with
+ENTSO-E's day-ahead `Forecasted Load` running into the target day (orange).
+The 24 hourly values we submit are the shaded block; any fallback-filled
+trailing hours are marked.
+
+```{python}
+#| label: fig-entsoe-forecast
+#| echo: true
+#| cache: false
+#| fig-cap: "ENTSO-E DE day-ahead baseline. Blue: the last week of published `Actual Load`. Orange: ENTSO-E's day-ahead `Forecasted Load`. The 24 hourly values for `y_0` (shaded) are exactly the CSV we submit; red crosses mark any trailing UTC hour filled from the 24 h-earlier forecast (@sec-entsoe-extract)."
+import matplotlib.pyplot as plt
+
+LAST_WEEK_START = TODAY_UTC - pd.Timedelta(days=7)
+actual_view = actual_h.loc[LAST_WEEK_START:]
+fc_view = forecast_h.loc[LAST_WEEK_START:]
+
+fig, ax = plt.subplots(figsize=(8.5, 3.5))
+ax.plot(actual_view.index, actual_view.values / 1000, color="#1F4E79",
+        lw=1.2, label="Actual Load (published)")
+ax.plot(fc_view.index, fc_view.values / 1000, color="#E07B00",
+        lw=1.2, label="ENTSO-E day-ahead forecast")
+# The submitted y_0 overlay only exists when the slice could be assembled.
+if SUBMISSION_READY:
+    filled = y0.index[~y0.index.isin(forecast_h.index)]
+    ax.plot(y0.index, y0.values / 1000, color="#E07B00", lw=0, marker="o", ms=3)
+    if len(filled):
+        ax.plot(filled, y0.loc[filled].values / 1000, color="#B22222", lw=0,
+                marker="x", ms=7, label="fallback (24 h-earlier forecast)")
+ax.axvspan(TOMORROW_UTC, LAST_TARGET, color="#E07B00", alpha=0.10,
+           label="target day (y_0)")
+ax.set_xlabel("Time (UTC)")
+ax.set_ylabel("Load [GW]")
+ax.set_title("ENTSO-E DE day-ahead baseline --- last week + target day")
+ax.grid(True, color="#E5E5E5", linewidth=0.5)
+ax.legend(fontsize=8)
+for s in ("top", "right"):
+    ax.spines[s].set_visible(False)
+fig.autofmt_xdate()
+fig.tight_layout()
+plt.show()
+```
+
+### Validate the schema and write the submission CSV {#sec-entsoe-write}
+
+The same four contract assertions as @sec-live-example guard the write: 24
+rows, the first stamp must be `TOMORROW 00:00 UTC`, every value strictly
+positive, no NaN. Any violation aborts before the file is opened, so a
+partially-written CSV can never reach the leaderboard.
+
+```{python}
+#| label: entsoe-submission-write
+#| echo: true
+from IPython.display import display
+
+TEAM_ID = "entsoe"
+
+if not SUBMISSION_READY:
+    # Render-safe skip: no valid 24-hour slice this render (@sec-entsoe-extract),
+    # so write nothing rather than a short / NaN CSV. submission_path stays None
+    # so the validation cell below also skips.
+    submission_path = None
+    print("Submission skipped this render --- ENTSO-E coverage was insufficient "
+          "(@sec-entsoe-extract).")
+    print("No CSV written; re-render after the target day's day-ahead forecast "
+          "is published.")
+else:
+    assert len(y0) == 24,           f"expected 24 hourly steps for y_0, got {len(y0)}"
+    assert y0.index.min() == TOMORROW_UTC, (
+        f"first step {y0.index.min()} != TOMORROW {TOMORROW_UTC}"
+    )
+    assert (y0 > 0).all(),          "non-positive forecast value --- spec requires > 0"
+    assert y0.notna().all(),        "NaN in forecast --- spec forbids"
+
+    SUBMISSION_DIR = Path.home() / "workspace" / "challenge-leaderboard" / "submissions" / TEAM_ID
+    SUBMISSION_DIR.mkdir(parents=True, exist_ok=True)
+    submission_path = SUBMISSION_DIR / f"{TOMORROW_UTC.date().isoformat()}.csv"
+
+    submission_df = pd.DataFrame({
+        "timestamp_utc": y0.index.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "forecast_mw":   y0.round(2).values,
+    })
+    submission_df.to_csv(submission_path, index=False)
+    print(f"wrote {submission_path}")
+    print(f"  rows: {len(submission_df)}")
+    print(f"  range: {submission_df.forecast_mw.min():.1f}–{submission_df.forecast_mw.max():.1f} MW")
+    display(submission_df.head(3))
+```
+
+### Local validation with the leaderboard's own script
+
+A green exit code from `validate_submission.py` is the same check that runs on
+the PR in CI. We pass `--skip-deadline` because the chapter may be rendered
+inside the deadline window (the live CI uses the strict form without the flag).
+
+```{python}
+#| label: entsoe-validate
+#| echo: true
+if not SUBMISSION_READY:
+    print("Validation skipped --- no submission was written this render "
+          "(@sec-entsoe-extract).")
+else:
+    import subprocess
+    lb_repo = Path.home() / "workspace" / "challenge-leaderboard"
+    result = subprocess.run(
+        [
+            "uv", "run", "python", "scripts/validate_submission.py",
+            "--path", str(submission_path.relative_to(lb_repo)),
+            "--skip-deadline",
+        ],
+        cwd=lb_repo,
+        capture_output=True,
+        text=True,
+    )
+    print("exit code:", result.returncode)
+    print("stdout   :", result.stdout.strip())
+    if result.stderr.strip():
+        print("stderr   :", result.stderr.strip())
+```
+
+## Commit and push the submission PR {#sec-entsoe-push}
+
+The cells above only *write* the CSV --- they deliberately do not commit,
+push, or open the PR (a careless render must not be able to spam the
+leaderboard). Run the block below from a shell once the validation cell above
+is green:
+
+```bash
+cd ~/workspace/challenge-leaderboard
+# TARGET=$(date -u -d 'tomorrow' +%F)                # Linux equivalent
+TARGET=$(date -u -v+1d +%F)
+# Unique branch per attempt: re-submitting for the same target day must not
+# collide with an earlier (already-merged) branch of the same name.
+BRANCH="submission/entsoe-${TARGET}-$(date -u +%H%M%S)"
+git switch -c "$BRANCH" main
+git add "submissions/entsoe/${TARGET}.csv"
+
+# Guard: if the re-rendered CSV is byte-identical to what is already on main,
+# there is nothing new to submit. Without this, `git commit` reports "nothing
+# to commit", the push sends an empty branch, and `gh pr create` fails with
+# "No commits between main and ...". The if/else skips the whole submit path
+# (and removes the throwaway branch) instead, so the block is safe to re-run.
+if git diff --cached --quiet; then
+    echo "No change vs main for ${TARGET} --- already submitted. Nothing to do."
+    git switch main && git branch -D "$BRANCH"
+else
+    git commit -m "submission(entsoe): day-ahead baseline for ${TARGET}"
+    git push -u origin "$BRANCH"
+
+    gh pr create --base main --repo bartzbeielstein/challenge-leaderboard \
+        --head "$BRANCH" \
+        --title "submission(entsoe): day-ahead baseline for ${TARGET}" \
+        --body  "Generated by ddmo-sose-26 chapter 15 (ENTSO-E day-ahead baseline)."
+fi
+```
+
+If validation on the PR passes, auto-merge squashes the submission onto
+`main`. The next morning at 07:00 UTC the leaderboard's `score-daily.yml` cron
+(see @sec-live-cron) scores it against ENTSO-E final actuals.
+
+::: {.callout-warning title="Deadline"}
+Submissions for target day `D` must be merged before `D-1 23:59 UTC` --- the
+validator enforces this strictly. This baseline renders in seconds, but the
+local `D` day-ahead `Forecasted Load` is only published around midday `D-1`;
+render after that window so the bulk of the 24 target hours come straight from
+the feed and only the one or two UTC/local boundary hours rely on the fallback.
+:::
+
+## Why a baseline team {#sec-entsoe-why}
+
+The leaderboard ranks on rolling 7-day mean MAE (@sec-live-contract). Without
+a reference point, a student team has no way to tell whether an MAE of, say,
+1500 MW is good. The `entsoe` row supplies that reference: it is the accuracy
+the operators' own forecast achieves on the very same scoring rule. Three
+readings follow directly from its position on the board:
+
+- A team *above* `entsoe` is beating the professional day-ahead forecast ---
+  a genuine result worth writing up.
+- A team *below* `entsoe` is being out-predicted by a free public series and
+  should revisit features or tuning before adding compute.
+- `entsoe`'s own day-to-day MAE variance shows the irreducible difficulty of
+  each target day --- a calm Sunday scores tighter than a volatile cold snap,
+  for everyone.
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Score the baseline yourself.* Once tomorrow becomes a past day with
+   published actuals, re-query `query_load_and_forecast`, align `forecast_h`
+   with the realised `Actual Load`, and compute the 24-hour MAE by hand.
+   Compare it to the leaderboard's scored value.
+2. *Beat it on one day.* Render @sec-team4-submission for the same target day
+   and compare its `y_0` against this baseline's `y_0`. On which hours does the
+   tuned model diverge most from ENTSO-E, and does that help or hurt once the
+   actuals land?
+3. *Probe the boundary fill.* How many UTC hours did the fallback in
+   @sec-entsoe-extract supply today, and why does that count change with the
+   season (CET vs CEST)? Discuss with Claude whether a smarter fill than 24 h
+   persistence (e.g. the same weekday last week) would be worth the complexity
+   for one or two hours.
+:::

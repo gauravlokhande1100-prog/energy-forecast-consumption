@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>15&nbsp; ENTSO-E day-ahead baseline submission – Safety-Critical Time-Series Forecasting with spotforecast2-safe</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./references.html" rel="next">
+<link href="./14_team_4_submission.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-5ccb035bea26c1e21f80f44cf7c27909.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./15_entsoe.html"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">ENTSO-E day-ahead baseline submission</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Safety-Critical Time-Series Forecasting with spotforecast2-safe</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01_audit_log.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Switch on the audit log</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02_entsoe_data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Loading live data from ENTSO-E</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_data_annotation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Annotate data gaps instead of inventing them</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04_missing_data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Handle data gaps explicitly</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_train_test_split.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Separating training and evaluation range</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_calendar_and_weather.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Calendar features and real weather data</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_forecaster_training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Instantiate and train the forecaster</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08_forecast.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Produce a 24-hour forecast</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./09_accuracy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Measuring accuracy: MAE, MSE, RMSE, MAPE</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10_backtest.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Rolling-origin backtest</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11_provenance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Provenance and reproducibility</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./12_challenge.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Challenge: live load forecasting</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./13_live_submission.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Live submission to the ddmo-sose-26 challenge</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./14_team_4_submission.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Team 4 live submission — advanced setup</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./15_entsoe.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">ENTSO-E day-ahead baseline submission</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./references.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">References</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#sec-entsoe-overview" id="toc-sec-entsoe-overview" class="nav-link active" data-scroll-target="#sec-entsoe-overview"><span class="header-section-number">15.1</span> Overview</a></li>
+  <li><a href="#submission-contract" id="toc-submission-contract" class="nav-link" data-scroll-target="#submission-contract"><span class="header-section-number">15.2</span> Submission contract</a></li>
+  <li><a href="#sec-entsoe-identity" id="toc-sec-entsoe-identity" class="nav-link" data-scroll-target="#sec-entsoe-identity"><span class="header-section-number">15.3</span> Team identity</a></li>
+  <li><a href="#prerequisites-and-walkthrough" id="toc-prerequisites-and-walkthrough" class="nav-link" data-scroll-target="#prerequisites-and-walkthrough"><span class="header-section-number">15.4</span> Prerequisites and walkthrough</a></li>
+  <li><a href="#sec-entsoe-example" id="toc-sec-entsoe-example" class="nav-link" data-scroll-target="#sec-entsoe-example"><span class="header-section-number">15.5</span> Live pipeline</a>
+  <ul class="collapse">
+  <li><a href="#dynamic-date-constants" id="toc-dynamic-date-constants" class="nav-link" data-scroll-target="#dynamic-date-constants"><span class="header-section-number">15.5.1</span> Dynamic date constants</a></li>
+  <li><a href="#sec-entsoe-query" id="toc-sec-entsoe-query" class="nav-link" data-scroll-target="#sec-entsoe-query"><span class="header-section-number">15.5.2</span> Download ENTSO-E’s day-ahead <code>Forecasted Load</code></a></li>
+  <li><a href="#sec-entsoe-extract" id="toc-sec-entsoe-extract" class="nav-link" data-scroll-target="#sec-entsoe-extract"><span class="header-section-number">15.5.3</span> Assemble the 24-hour target slice</a></li>
+  <li><a href="#visual-inspection" id="toc-visual-inspection" class="nav-link" data-scroll-target="#visual-inspection"><span class="header-section-number">15.5.4</span> Visual inspection</a></li>
+  <li><a href="#sec-entsoe-write" id="toc-sec-entsoe-write" class="nav-link" data-scroll-target="#sec-entsoe-write"><span class="header-section-number">15.5.5</span> Validate the schema and write the submission CSV</a></li>
+  <li><a href="#local-validation-with-the-leaderboards-own-script" id="toc-local-validation-with-the-leaderboards-own-script" class="nav-link" data-scroll-target="#local-validation-with-the-leaderboards-own-script"><span class="header-section-number">15.5.6</span> Local validation with the leaderboard’s own script</a></li>
+  </ul></li>
+  <li><a href="#sec-entsoe-push" id="toc-sec-entsoe-push" class="nav-link" data-scroll-target="#sec-entsoe-push"><span class="header-section-number">15.6</span> Commit and push the submission PR</a></li>
+  <li><a href="#sec-entsoe-why" id="toc-sec-entsoe-why" class="nav-link" data-scroll-target="#sec-entsoe-why"><span class="header-section-number">15.7</span> Why a baseline team</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span id="sec-entsoe-submission" class="quarto-section-identifier"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">ENTSO-E day-ahead baseline submission</span></span></h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-default callout-note callout-titled" title="Learning objective">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Learning objective
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You can submit the <em>transmission system operators’ own</em> 24-hour DE load forecast — ENTSO-E’s published day-ahead <code>Forecasted Load</code> — as a zero-model baseline on the live leaderboard, under the registered team <code>entsoe</code>. The chapter shows why this baseline is the honest yardstick every tuned forecaster in <a href="13_live_submission.html" class="quarto-xref"><span>Chapter 13</span></a> and <a href="14_team_4_submission.html" class="quarto-xref"><span>Chapter 14</span></a> must beat, and writes the validated CSV into the leaderboard fork.</p>
+</div>
+</div>
+<section id="sec-entsoe-overview" class="level2" data-number="15.1">
+<h2 data-number="15.1" class="anchored" data-anchor-id="sec-entsoe-overview"><span class="header-section-number">15.1</span> Overview</h2>
+<p><a href="13_live_submission.html" class="quarto-xref"><span>Chapter 13</span></a> tunes an Optuna LightGBM forecaster; <a href="14_team_4_submission.html" class="quarto-xref"><span>Chapter 14</span></a> tunes a richer SpotOptim variant. Both pull ENTSO-E’s own day-ahead <code>Forecasted Load</code> purely as a comparison overlay (<a href="14_team_4_submission.html#sec-team4-vs-entsoe" class="quarto-xref"><span>Section 14.6.11</span></a>) and never let the model train on it. This chapter inverts that relationship: it submits ENTSO-E’s day-ahead forecast <em>directly</em>, with no model at all.</p>
+<p>That is deliberate. ENTSO-E aggregates the forecasts the European transmission system operators already produce for grid scheduling, so it is a strong, free, professionally-maintained baseline. A tuned model that cannot beat it over the rolling 7-day window is not earning its compute. Submitting it as its own team <code>entsoe</code> puts that yardstick on the public leaderboard next to the student models, where the comparison is unavoidable.</p>
+<p>Every safety contract from <a href="13_live_submission.html" class="quarto-xref"><span>Chapter 13</span></a> carries over unchanged (24-row schema, strictly-positive forecasts, no NaN). What disappears is the entire modelling stack: no <code>MultiTask</code>, no <code>ConfigEntsoe</code>, no tuning, no exogenous features. The forecast is a slice of the downloaded ENTSO-E frame. Two wrinkles specific to a <em>forward</em> baseline are handled along the way — the safe downloader drops future rows unless asked to keep them (<a href="#sec-entsoe-query" class="quarto-xref"><span>Section 15.5.2</span></a>), and a UTC target day straddles two local publication days (<a href="#sec-entsoe-extract" class="quarto-xref"><span>Section 15.5.3</span></a>).</p>
+</section>
+<section id="submission-contract" class="level2" data-number="15.2">
+<h2 data-number="15.2" class="anchored" data-anchor-id="submission-contract"><span class="header-section-number">15.2</span> Submission contract</h2>
+<p>Unchanged — see <a href="13_live_submission.html#sec-live-contract" class="quarto-xref"><span>Section 13.2</span></a> for the CSV schema, deadline, and scoring rules. The leaderboard validator that runs against this chapter’s output is byte-identical to the one used by <a href="13_live_submission.html" class="quarto-xref"><span>Chapter 13</span></a>. The only difference is the path: <code>submissions/entsoe/&lt;YYYY-MM-DD&gt;.csv</code>.</p>
+</section>
+<section id="sec-entsoe-identity" class="level2" data-number="15.3">
+<h2 data-number="15.3" class="anchored" data-anchor-id="sec-entsoe-identity"><span class="header-section-number">15.3</span> Team identity</h2>
+<p><code>entsoe</code> is hardcoded throughout this chapter — there is no placeholder to edit. The cell below confirms the team is registered in <code>challenge-leaderboard/teams.yml</code>.</p>
+<div id="entsoe-registry" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> yaml</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>teams_yml <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"workspace"</span> <span class="op">/</span> <span class="st">"challenge-leaderboard"</span> <span class="op">/</span> <span class="st">"teams.yml"</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>teams <span class="op">=</span> yaml.safe_load(teams_yml.read_text())[<span class="st">"teams"</span>]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>team <span class="op">=</span> <span class="bu">next</span>((t <span class="cf">for</span> t <span class="kw">in</span> teams <span class="cf">if</span> t[<span class="st">"id"</span>] <span class="op">==</span> <span class="st">"entsoe"</span>), <span class="va">None</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> team <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>, <span class="st">"entsoe is not in challenge-leaderboard/teams.yml"</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"entsoe display_name : </span><span class="sc">{</span>team[<span class="st">'display_name'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"entsoe github       : </span><span class="sc">{</span><span class="st">', '</span><span class="sc">.</span>join(team[<span class="st">'github_handles'</span>])<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>entsoe display_name : Entso-E
+entsoe github       : bartzbeielstein</code></pre>
+</div>
+</div>
+<p><code>validate_authorship()</code> in <code>scripts/validate_submission.py:89</code> rejects PRs whose author is not in this <code>github_handles</code> list, so the <code>gh auth login</code> account used in <a href="#sec-entsoe-push" class="quarto-xref"><span>Section 15.6</span></a> must match.</p>
+</section>
+<section id="prerequisites-and-walkthrough" class="level2" data-number="15.4">
+<h2 data-number="15.4" class="anchored" data-anchor-id="prerequisites-and-walkthrough"><span class="header-section-number">15.4</span> Prerequisites and walkthrough</h2>
+<p>Identical to <a href="13_live_submission.html#sec-live-walkthrough" class="quarto-xref"><span>Section 13.4</span></a>: Python 3.13 + uv, a personal ENTSO-E API key exported as <code>ENTSOE_API_KEY</code>, <code>gh auth login</code> as a registered <code>entsoe</code> handle, and a sibling clone of <code>challenge-leaderboard</code> at <code>~/workspace/challenge-leaderboard/</code>. Because there is no model to train, this chapter renders in seconds — it issues a single API call and slices it.</p>
+</section>
+<section id="sec-entsoe-example" class="level2" data-number="15.5">
+<h2 data-number="15.5" class="anchored" data-anchor-id="sec-entsoe-example"><span class="header-section-number">15.5</span> Live pipeline</h2>
+<div id="entsoe-imports" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Isolate this chapter's storage from chapters 13 and 14 (each pins its own</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># download home so the three chapters never read or write the same interim</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># file). The package reads the env var at call time via get_data_home().</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"SPOTFORECAST2_DATA"</span>]  <span class="op">=</span> <span class="bu">str</span>(Path.home() <span class="op">/</span> <span class="st">"spotforecast2_data"</span>  <span class="op">/</span> <span class="st">"ddmo_ch15_entsoe"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"SPOTFORECAST2_CACHE"</span>] <span class="op">=</span> <span class="bu">str</span>(Path.home() <span class="op">/</span> <span class="st">".spotforecast2_cache"</span> <span class="op">/</span> <span class="st">"ddmo_ch15_entsoe"</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spotforecast2_safe.downloader.entsoe <span class="im">import</span> download_new_data</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spotforecast2_safe.data.fetch_data <span class="im">import</span> get_data_home</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>api_key <span class="op">=</span> os.environ.get(<span class="st">"ENTSOE_API_KEY"</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> api_key, <span class="st">"ENTSOE_API_KEY must be set in the environment (see @sec-live-walkthrough Step 3)."</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="dynamic-date-constants" class="level3" data-number="15.5.1">
+<h3 data-number="15.5.1" class="anchored" data-anchor-id="dynamic-date-constants"><span class="header-section-number">15.5.1</span> Dynamic date constants</h3>
+<p>Every date is derived from <code>pd.Timestamp.now(tz="UTC").normalize()</code> so the chapter stays correct on every render — same convention as <a href="13_live_submission.html#sec-live-example" class="quarto-xref"><span>Section 13.5</span></a>. <code>y_0</code> is tomorrow’s UTC day (00:00–23:00 UTC), the 24 hourly stamps the leaderboard scores.</p>
+<div id="entsoe-constants" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>NOW_UTC <span class="op">=</span> pd.Timestamp.now(tz<span class="op">=</span><span class="st">"UTC"</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>TODAY_UTC <span class="op">=</span> NOW_UTC.normalize()</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>TOMORROW_UTC <span class="op">=</span> TODAY_UTC <span class="op">+</span> pd.Timedelta(days<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>LAST_TARGET <span class="op">=</span> TOMORROW_UTC <span class="op">+</span> pd.Timedelta(hours<span class="op">=</span><span class="dv">23</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># A day-ahead baseline needs no training history --- only a short recent window:</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># enough to carry the last week of `Actual Load` for the context plot plus a</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># previous-day fallback (@sec-entsoe-extract). We download the last 10 days and</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># reach the end through the day *after* tomorrow so the full target day is</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># covered as soon as ENTSO-E publishes it. download_new_data takes the window as</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 'YYYYMMDDHH00' strings.</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>START_DOWNLOAD <span class="op">=</span> (TODAY_UTC <span class="op">-</span> pd.Timedelta(days<span class="op">=</span><span class="dv">10</span>)).strftime(<span class="st">"%Y%m</span><span class="sc">%d</span><span class="st">%H%M"</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>END_DOWNLOAD <span class="op">=</span> (TOMORROW_UTC <span class="op">+</span> pd.Timedelta(days<span class="op">=</span><span class="dv">1</span>)).strftime(<span class="st">"%Y%m</span><span class="sc">%d</span><span class="st">%H%M"</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NOW_UTC        = </span><span class="sc">{</span>NOW_UTC<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TODAY_UTC      = </span><span class="sc">{</span>TODAY_UTC<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TOMORROW_UTC   = </span><span class="sc">{</span>TOMORROW_UTC<span class="sc">}</span><span class="ss">  (target day = y_0)"</span>)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"LAST_TARGET    = </span><span class="sc">{</span>LAST_TARGET<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"START_DOWNLOAD = </span><span class="sc">{</span>START_DOWNLOAD<span class="sc">}</span><span class="ss">  (10 days back --- no training history)"</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"END_DOWNLOAD   = </span><span class="sc">{</span>END_DOWNLOAD<span class="sc">}</span><span class="ss">  (covers tomorrow's day-ahead forecast)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NOW_UTC        = 2026-05-31 20:20:04.379399+00:00
+TODAY_UTC      = 2026-05-31 00:00:00+00:00
+TOMORROW_UTC   = 2026-06-01 00:00:00+00:00  (target day = y_0)
+LAST_TARGET    = 2026-06-01 23:00:00+00:00
+START_DOWNLOAD = 202605210000  (10 days back --- no training history)
+END_DOWNLOAD   = 202606020000  (covers tomorrow's day-ahead forecast)</code></pre>
+</div>
+</div>
+</section>
+<section id="sec-entsoe-query" class="level3" data-number="15.5.2">
+<h3 data-number="15.5.2" class="anchored" data-anchor-id="sec-entsoe-query"><span class="header-section-number">15.5.2</span> Download ENTSO-E’s day-ahead <code>Forecasted Load</code></h3>
+<p>We fetch through the same safe wrapper the training chapters use, <code>spotforecast2_safe.downloader.entsoe.download_new_data</code>, with one argument that matters here: <code>keep_forecast_future=True</code>. By default the wrapper drops every row after <code>now</code> when it merges the download into the interim file —</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># spotforecast2_safe/downloader/entsoe.py</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> keep_forecast_future:</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    merged_df <span class="op">=</span> merged_df.loc[merged_df.index <span class="op">&lt;=</span> pd.Timestamp.now(tz<span class="op">=</span><span class="st">"UTC"</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>That truncation is correct for the training chapters (a model must never see the future), but it would erase the very thing this baseline submits: ENTSO-E’s day-ahead <code>Forecasted Load</code> for tomorrow. The flag keeps those future rows; future <code>Actual Load</code> is still blank, so nothing leaks — there is no model here in any case. ENTSO-E’s <code>Forecasted Load</code> is published per <em>local</em> (Europe/Berlin) day; the wrapper normalises the merged interim index to UTC, the zone the leaderboard scores in.</p>
+<div id="entsoe-query" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>download_new_data(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    api_key<span class="op">=</span>api_key,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    country_code<span class="op">=</span><span class="st">"DE"</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    start<span class="op">=</span>START_DOWNLOAD,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    end<span class="op">=</span>END_DOWNLOAD,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    force<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    keep_forecast_future<span class="op">=</span><span class="va">True</span>,   <span class="co"># keep tomorrow's day-ahead forecast</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>interim_csv <span class="op">=</span> get_data_home() <span class="op">/</span> <span class="st">"interim"</span> <span class="op">/</span> <span class="st">"energy_load.csv"</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>interim <span class="op">=</span> pd.read_csv(interim_csv, index_col<span class="op">=</span><span class="dv">0</span>, parse_dates<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>interim.index <span class="op">=</span> pd.to_datetime(interim.index, utc<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"interim rows       : </span><span class="sc">{</span><span class="bu">len</span>(interim)<span class="sc">}</span><span class="ss"> (15-min, </span><span class="sc">{</span>interim<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>interim<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"columns            : </span><span class="sc">{</span><span class="bu">list</span>(interim.columns)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Forecasted Load to : </span><span class="sc">{</span>interim[<span class="st">'Forecasted Load'</span>]<span class="sc">.</span>dropna()<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Actual Load to     : </span><span class="sc">{</span>interim[<span class="st">'Actual Load'</span>]<span class="sc">.</span>dropna()<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>interim rows       : 1144 (15-min, 2026-05-21 00:00:00+00:00 → 2026-06-01 21:45:00+00:00)
+columns            : ['Forecasted Load', 'Actual Load']
+Forecasted Load to : 2026-06-01 21:45:00+00:00
+Actual Load to     : 2026-05-31 19:15:00+00:00</code></pre>
+</div>
+</div>
+<p>We aggregate the 15-minute series onto the hourly grid the leaderboard scores on — the mean of each hour’s four quarter-hour values, matching how the tuned chapters aggregate the actuals.</p>
+<div id="entsoe-hourly" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>forecast_h <span class="op">=</span> interim[<span class="st">"Forecasted Load"</span>].resample(<span class="st">"h"</span>).mean().dropna()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>actual_h <span class="op">=</span> interim[<span class="st">"Actual Load"</span>].resample(<span class="st">"h"</span>).mean().dropna()</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>forecast_h.name <span class="op">=</span> <span class="st">"Forecasted Load"</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>actual_h.name <span class="op">=</span> <span class="st">"Actual Load"</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"hourly forecast : </span><span class="sc">{</span><span class="bu">len</span>(forecast_h)<span class="sc">}</span><span class="ss"> h | </span><span class="sc">{</span>forecast_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>forecast_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"hourly actual   : </span><span class="sc">{</span><span class="bu">len</span>(actual_h)<span class="sc">}</span><span class="ss"> h | </span><span class="sc">{</span>actual_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>actual_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>hourly forecast : 286 h | 2026-05-21 00:00:00+00:00 → 2026-06-01 21:00:00+00:00
+hourly actual   : 260 h | 2026-05-21 00:00:00+00:00 → 2026-05-31 19:00:00+00:00</code></pre>
+</div>
+</div>
+</section>
+<section id="sec-entsoe-extract" class="level3" data-number="15.5.3">
+<h3 data-number="15.5.3" class="anchored" data-anchor-id="sec-entsoe-extract"><span class="header-section-number">15.5.3</span> Assemble the 24-hour target slice</h3>
+<p>The target is the 24 UTC hours of tomorrow, <code>00:00 … 23:00</code>. ENTSO-E publishes its day-ahead forecast per <em>local</em> (Europe/Berlin) day, and Germany runs one or two hours ahead of UTC. So at submission time — the afternoon of <code>D-1</code>, when only the local <code>D</code> day-ahead is out — the last one or two UTC hours of the target (<code>22:00</code>, <code>23:00</code> UTC) fall into the <em>next</em> local day, which ENTSO-E does not publish until <code>D</code>, after the <code>D-1 23:59 UTC</code> deadline.</p>
+<p>Those trailing hours are therefore filled with ENTSO-E’s own forecast for the same clock hour 24 hours earlier — a transparent, fully reproducible persistence of the operators’ published forecast (today’s day-ahead is already complete, so the fallback source always exists). The fill is logged, and a fail-loud guard (CR-3) aborts if even the fallback is missing rather than writing a short or NaN-padded CSV.</p>
+<div id="entsoe-extract" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>target_index <span class="op">=</span> pd.date_range(TOMORROW_UTC, LAST_TARGET, freq<span class="op">=</span><span class="st">"h"</span>, tz<span class="op">=</span><span class="st">"UTC"</span>)  <span class="co"># 24 stamps</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>y0 <span class="op">=</span> forecast_h.reindex(target_index)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>published <span class="op">=</span> <span class="bu">int</span>(y0.notna().<span class="bu">sum</span>())</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>missing <span class="op">=</span> y0.index[y0.isna()]</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"day-ahead hours published for </span><span class="sc">{</span>TOMORROW_UTC<span class="sc">.</span>date()<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>published<span class="sc">}</span><span class="ss"> / 24"</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ts <span class="kw">in</span> missing:</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    fallback <span class="op">=</span> forecast_h.reindex([ts <span class="op">-</span> pd.Timedelta(days<span class="op">=</span><span class="dv">1</span>)]).iloc[<span class="dv">0</span>]</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> pd.isna(fallback):</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">RuntimeError</span>(</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"No day-ahead value for </span><span class="sc">{</span>ts<span class="sc">}</span><span class="ss"> and no 24 h-earlier fallback either; "</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ENTSO-E coverage is too thin to assemble 24 hours. Re-render once "</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"the day-ahead forecast for the target day is published."</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    y0.loc[ts] <span class="op">=</span> fallback</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  filled </span><span class="sc">{</span>ts<span class="sc">}</span><span class="ss"> ← </span><span class="sc">{</span>ts <span class="op">-</span> pd<span class="sc">.</span>Timedelta(days<span class="op">=</span><span class="dv">1</span>)<span class="sc">}</span><span class="ss"> (24 h-earlier ENTSO-E forecast = </span><span class="sc">{</span>fallback<span class="sc">:,.0f}</span><span class="ss"> MW)"</span>)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>y0.name <span class="op">=</span> <span class="st">"Forecasted Load"</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">y_0 assembled: </span><span class="sc">{</span><span class="bu">len</span>(y0)<span class="sc">}</span><span class="ss"> hourly steps | </span><span class="sc">{</span>y0<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>y0<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y0)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>day-ahead hours published for 2026-06-01: 22 / 24
+  filled 2026-06-01 22:00:00+00:00 ← 2026-05-31 22:00:00+00:00 (24 h-earlier ENTSO-E forecast = 41,048 MW)
+  filled 2026-06-01 23:00:00+00:00 ← 2026-05-31 23:00:00+00:00 (24 h-earlier ENTSO-E forecast = 39,752 MW)
+
+y_0 assembled: 24 hourly steps | 2026-06-01 00:00:00+00:00 → 2026-06-01 23:00:00+00:00
+2026-06-01 00:00:00+00:00    39327.047789
+2026-06-01 01:00:00+00:00    39675.580085
+2026-06-01 02:00:00+00:00    41285.199476
+2026-06-01 03:00:00+00:00    45776.233649
+2026-06-01 04:00:00+00:00    52975.273053
+2026-06-01 05:00:00+00:00    57379.896787
+2026-06-01 06:00:00+00:00    60062.325011
+2026-06-01 07:00:00+00:00    60396.462782
+2026-06-01 08:00:00+00:00    60874.850613
+2026-06-01 09:00:00+00:00    60911.805267
+2026-06-01 10:00:00+00:00    60694.146027
+2026-06-01 11:00:00+00:00    59381.019278
+2026-06-01 12:00:00+00:00    58150.097945
+2026-06-01 13:00:00+00:00    57647.152979
+2026-06-01 14:00:00+00:00    57535.920035
+2026-06-01 15:00:00+00:00    58022.758576
+2026-06-01 16:00:00+00:00    58422.032589
+2026-06-01 17:00:00+00:00    58017.811127
+2026-06-01 18:00:00+00:00    56567.745495
+2026-06-01 19:00:00+00:00    53892.870363
+2026-06-01 20:00:00+00:00    50815.118195
+2026-06-01 21:00:00+00:00    48307.254943
+2026-06-01 22:00:00+00:00    41047.617584
+2026-06-01 23:00:00+00:00    39752.114576
+Freq: h, Name: Forecasted Load, dtype: float64</code></pre>
+</div>
+</div>
+</section>
+<section id="visual-inspection" class="level3" data-number="15.5.4">
+<h3 data-number="15.5.4" class="anchored" data-anchor-id="visual-inspection"><span class="header-section-number">15.5.4</span> Visual inspection</h3>
+<p>The plot overlays the last week of published <code>Actual Load</code> (blue) with ENTSO-E’s day-ahead <code>Forecasted Load</code> running into the target day (orange). The 24 hourly values we submit are the shaded block; any fallback-filled trailing hours are marked.</p>
+<div id="cell-fig-entsoe-forecast" class="cell" data-cache="false" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>LAST_WEEK_START <span class="op">=</span> TODAY_UTC <span class="op">-</span> pd.Timedelta(days<span class="op">=</span><span class="dv">7</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>actual_view <span class="op">=</span> actual_h.loc[LAST_WEEK_START:]</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>fc_view <span class="op">=</span> forecast_h.loc[LAST_WEEK_START:]</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>filled <span class="op">=</span> y0.index[<span class="op">~</span>y0.index.isin(forecast_h.index)]</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">8.5</span>, <span class="fl">3.5</span>))</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>ax.plot(actual_view.index, actual_view.values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#1F4E79"</span>,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>        lw<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"Actual Load (published)"</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>ax.plot(fc_view.index, fc_view.values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#E07B00"</span>,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        lw<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"ENTSO-E day-ahead forecast"</span>)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>ax.plot(y0.index, y0.values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#E07B00"</span>, lw<span class="op">=</span><span class="dv">0</span>, marker<span class="op">=</span><span class="st">"o"</span>, ms<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">len</span>(filled):</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    ax.plot(filled, y0.loc[filled].values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#B22222"</span>, lw<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>            marker<span class="op">=</span><span class="st">"x"</span>, ms<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"fallback (24 h-earlier forecast)"</span>)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>ax.axvspan(TOMORROW_UTC, LAST_TARGET, color<span class="op">=</span><span class="st">"#E07B00"</span>, alpha<span class="op">=</span><span class="fl">0.10</span>,</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>           label<span class="op">=</span><span class="st">"target day (y_0)"</span>)</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"Time (UTC)"</span>)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Load [GW]"</span>)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"ENTSO-E DE day-ahead baseline --- last week + target day"</span>)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, color<span class="op">=</span><span class="st">"#E5E5E5"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>ax.legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s <span class="kw">in</span> (<span class="st">"top"</span>, <span class="st">"right"</span>):</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    ax.spines[s].set_visible(<span class="va">False</span>)</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>fig.autofmt_xdate()</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-entsoe-forecast" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-entsoe-forecast-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="15_entsoe_files/figure-html/fig-entsoe-forecast-output-1.png" width="807" height="328" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-entsoe-forecast-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15.1: ENTSO-E DE day-ahead baseline. Blue: the last week of published <code>Actual Load</code>. Orange: ENTSO-E’s day-ahead <code>Forecasted Load</code>. The 24 hourly values for <code>y_0</code> (shaded) are exactly the CSV we submit; red crosses mark any trailing UTC hour filled from the 24 h-earlier forecast (<a href="#sec-entsoe-extract" class="quarto-xref"><span>Section 15.5.3</span></a>).
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="sec-entsoe-write" class="level3" data-number="15.5.5">
+<h3 data-number="15.5.5" class="anchored" data-anchor-id="sec-entsoe-write"><span class="header-section-number">15.5.5</span> Validate the schema and write the submission CSV</h3>
+<p>The same four contract assertions as <a href="13_live_submission.html#sec-live-example" class="quarto-xref"><span>Section 13.5</span></a> guard the write: 24 rows, the first stamp must be <code>TOMORROW 00:00 UTC</code>, every value strictly positive, no NaN. Any violation aborts before the file is opened, so a partially-written CSV can never reach the leaderboard.</p>
+<div id="cell-entsoe-submission-write" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(y0) <span class="op">==</span> <span class="dv">24</span>,           <span class="ss">f"expected 24 hourly steps for y_0, got </span><span class="sc">{</span><span class="bu">len</span>(y0)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> y0.index.<span class="bu">min</span>() <span class="op">==</span> TOMORROW_UTC, (</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"first step </span><span class="sc">{</span>y0<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> != TOMORROW </span><span class="sc">{</span>TOMORROW_UTC<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> (y0 <span class="op">&gt;</span> <span class="dv">0</span>).<span class="bu">all</span>(),          <span class="st">"non-positive forecast value --- spec requires &gt; 0"</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> y0.notna().<span class="bu">all</span>(),        <span class="st">"NaN in forecast --- spec forbids"</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>TEAM_ID <span class="op">=</span> <span class="st">"entsoe"</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>SUBMISSION_DIR <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"workspace"</span> <span class="op">/</span> <span class="st">"challenge-leaderboard"</span> <span class="op">/</span> <span class="st">"submissions"</span> <span class="op">/</span> TEAM_ID</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>SUBMISSION_DIR.mkdir(parents<span class="op">=</span><span class="va">True</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>submission_path <span class="op">=</span> SUBMISSION_DIR <span class="op">/</span> <span class="ss">f"</span><span class="sc">{</span>TOMORROW_UTC<span class="sc">.</span>date()<span class="sc">.</span>isoformat()<span class="sc">}</span><span class="ss">.csv"</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>submission_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"timestamp_utc"</span>: y0.index.strftime(<span class="st">"%Y-%m-</span><span class="sc">%d</span><span class="st">T%H:%M:%SZ"</span>),</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"forecast_mw"</span>:   y0.<span class="bu">round</span>(<span class="dv">2</span>).values,</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>submission_df.to_csv(submission_path, index<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"wrote </span><span class="sc">{</span>submission_path<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  rows: </span><span class="sc">{</span><span class="bu">len</span>(submission_df)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  range: </span><span class="sc">{</span>submission_df<span class="sc">.</span>forecast_mw<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.1f}</span><span class="ss">–</span><span class="sc">{</span>submission_df<span class="sc">.</span>forecast_mw<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1f}</span><span class="ss"> MW"</span>)</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>submission_df.head(<span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>wrote /Users/bartz/workspace/challenge-leaderboard/submissions/entsoe/2026-06-01.csv
+  rows: 24
+  range: 39327.1–60911.8 MW</code></pre>
+</div>
+<div id="entsoe-submission-write" class="cell-output cell-output-display" data-execution_count="8">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">timestamp_utc</th>
+<th data-quarto-table-cell-role="th">forecast_mw</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>2026-06-01T00:00:00Z</td>
+<td>39327.05</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>2026-06-01T01:00:00Z</td>
+<td>39675.58</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>2026-06-01T02:00:00Z</td>
+<td>41285.20</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="local-validation-with-the-leaderboards-own-script" class="level3" data-number="15.5.6">
+<h3 data-number="15.5.6" class="anchored" data-anchor-id="local-validation-with-the-leaderboards-own-script"><span class="header-section-number">15.5.6</span> Local validation with the leaderboard’s own script</h3>
+<p>A green exit code from <code>validate_submission.py</code> is the same check that runs on the PR in CI. We pass <code>--skip-deadline</code> because the chapter may be rendered inside the deadline window (the live CI uses the strict form without the flag).</p>
+<div id="entsoe-validate" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> subprocess</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>lb_repo <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"workspace"</span> <span class="op">/</span> <span class="st">"challenge-leaderboard"</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> subprocess.run(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    [</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"uv"</span>, <span class="st">"run"</span>, <span class="st">"python"</span>, <span class="st">"scripts/validate_submission.py"</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"--path"</span>, <span class="bu">str</span>(submission_path.relative_to(lb_repo)),</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>        <span class="st">"--skip-deadline"</span>,</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    cwd<span class="op">=</span>lb_repo,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    capture_output<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"exit code:"</span>, result.returncode)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"stdout   :"</span>, result.stdout.strip())</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> result.stderr.strip():</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"stderr   :"</span>, result.stderr.strip())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>exit code: 0
+stdout   : OK: team=entsoe target_date=2026-06-01 file=submissions/entsoe/2026-06-01.csv</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-entsoe-push" class="level2" data-number="15.6">
+<h2 data-number="15.6" class="anchored" data-anchor-id="sec-entsoe-push"><span class="header-section-number">15.6</span> Commit and push the submission PR</h2>
+<p>The cells above only <em>write</em> the CSV — they deliberately do not commit, push, or open the PR (a careless render must not be able to spam the leaderboard). Run the block below from a shell once the validation cell above is green:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/workspace/challenge-leaderboard</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># TARGET=$(date -u -d 'tomorrow' +%F)                # Linux equivalent</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="va">TARGET</span><span class="op">=</span><span class="va">$(</span><span class="fu">date</span> <span class="at">-u</span> <span class="at">-v+1d</span> +%F<span class="va">)</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Unique branch per attempt: re-submitting for the same target day must not</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co"># collide with an earlier (already-merged) branch of the same name.</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="va">BRANCH</span><span class="op">=</span><span class="st">"submission/entsoe-</span><span class="va">${TARGET}</span><span class="st">-</span><span class="va">$(</span><span class="fu">date</span> <span class="at">-u</span> +%H%M%S<span class="va">)</span><span class="st">"</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> switch <span class="at">-c</span> <span class="st">"</span><span class="va">$BRANCH</span><span class="st">"</span> main</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add <span class="st">"submissions/entsoe/</span><span class="va">${TARGET}</span><span class="st">.csv"</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"submission(entsoe): day-ahead baseline for </span><span class="va">${TARGET}</span><span class="st">"</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin <span class="st">"</span><span class="va">$BRANCH</span><span class="st">"</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr create <span class="at">--base</span> main <span class="at">--repo</span> bartzbeielstein/challenge-leaderboard <span class="dt">\</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">--head</span> <span class="st">"</span><span class="va">$BRANCH</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">--title</span> <span class="st">"submission(entsoe): day-ahead baseline for </span><span class="va">${TARGET}</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">--body</span>  <span class="st">"Generated by ddmo-sose-26 chapter 15 (ENTSO-E day-ahead baseline)."</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>If validation on the PR passes, auto-merge squashes the submission onto <code>main</code>. The next morning at 07:00 UTC the leaderboard’s <code>score-daily.yml</code> cron (see <a href="13_live_submission.html#sec-live-cron" class="quarto-xref"><span>Section 13.7</span></a>) scores it against ENTSO-E final actuals.</p>
+<div class="callout callout-style-default callout-warning callout-titled" title="Deadline">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Deadline
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Submissions for target day <code>D</code> must be merged before <code>D-1 23:59 UTC</code> — the validator enforces this strictly. This baseline renders in seconds, but the local <code>D</code> day-ahead <code>Forecasted Load</code> is only published around midday <code>D-1</code>; render after that window so the bulk of the 24 target hours come straight from the feed and only the one or two UTC/local boundary hours rely on the fallback.</p>
+</div>
+</div>
+</section>
+<section id="sec-entsoe-why" class="level2" data-number="15.7">
+<h2 data-number="15.7" class="anchored" data-anchor-id="sec-entsoe-why"><span class="header-section-number">15.7</span> Why a baseline team</h2>
+<p>The leaderboard ranks on rolling 7-day mean MAE (<a href="13_live_submission.html#sec-live-contract" class="quarto-xref"><span>Section 13.2</span></a>). Without a reference point, a student team has no way to tell whether an MAE of, say, 1500 MW is good. The <code>entsoe</code> row supplies that reference: it is the accuracy the operators’ own forecast achieves on the very same scoring rule. Three readings follow directly from its position on the board:</p>
+<ul>
+<li>A team <em>above</em> <code>entsoe</code> is beating the professional day-ahead forecast — a genuine result worth writing up.</li>
+<li>A team <em>below</em> <code>entsoe</code> is being out-predicted by a free public series and should revisit features or tuning before adding compute.</li>
+<li><code>entsoe</code>’s own day-to-day MAE variance shows the irreducible difficulty of each target day — a calm Sunday scores tighter than a volatile cold snap, for everyone.</li>
+</ul>
+<div class="callout callout-style-default callout-tip callout-titled" title="Exercises (with Claude)">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Exercises (with Claude)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><em>Score the baseline yourself.</em> Once tomorrow becomes a past day with published actuals, re-query <code>query_load_and_forecast</code>, align <code>forecast_h</code> with the realised <code>Actual Load</code>, and compute the 24-hour MAE by hand. Compare it to the leaderboard’s scored value.</li>
+<li><em>Beat it on one day.</em> Render <a href="14_team_4_submission.html" class="quarto-xref"><span>Chapter 14</span></a> for the same target day and compare its <code>y_0</code> against this baseline’s <code>y_0</code>. On which hours does the tuned model diverge most from ENTSO-E, and does that help or hurt once the actuals land?</li>
+<li><em>Probe the boundary fill.</em> How many UTC hours did the fallback in <a href="#sec-entsoe-extract" class="quarto-xref"><span>Section 15.5.3</span></a> supply today, and why does that count change with the season (CET vs CEST)? Discuss with Claude whether a smarter fill than 24 h persistence (e.g.&nbsp;the same weekday last week) would be worth the complexity for one or two hours.</li>
+</ol>
+</div>
+</div>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./14_team_4_submission.html" class="pagination-link" aria-label="Team 4 live submission --- advanced setup">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Team 4 live submission — advanced setup</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./references.html" class="pagination-link" aria-label="References">
+        <span class="nav-page-text">References</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu"># ENTSO-E day-ahead baseline submission {#sec-entsoe-submission}</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>::: {.callout-note title="Learning objective"}</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>You can submit the *transmission system operators' own* 24-hour DE load</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>forecast --- ENTSO-E's published day-ahead <span class="in">`Forecasted Load`</span> --- as a</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>zero-model baseline on the live leaderboard, under the registered team</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="in">`entsoe`</span>. The chapter shows why this baseline is the honest yardstick</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>every tuned forecaster in @sec-live-submission and @sec-team4-submission</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>must beat, and writes the validated CSV into the leaderboard fork.</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="fu">## Overview {#sec-entsoe-overview}</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>@sec-live-submission tunes an Optuna LightGBM forecaster; @sec-team4-submission</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>tunes a richer SpotOptim variant. Both pull ENTSO-E's own day-ahead</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a><span class="in">`Forecasted Load`</span> purely as a comparison overlay (@sec-team4-vs-entsoe) and</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>never let the model train on it. This chapter inverts that relationship: it</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>submits ENTSO-E's day-ahead forecast *directly*, with no model at all.</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>That is deliberate. ENTSO-E aggregates the forecasts the European</span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>transmission system operators already produce for grid scheduling, so it is a</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>strong, free, professionally-maintained baseline. A tuned model that cannot</span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>beat it over the rolling 7-day window is not earning its compute. Submitting</span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>it as its own team <span class="in">`entsoe`</span> puts that yardstick on the public leaderboard</span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>next to the student models, where the comparison is unavoidable.</span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>Every safety contract from @sec-live-submission carries over unchanged</span>
+<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>(24-row schema, strictly-positive forecasts, no NaN). What disappears is the</span>
+<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a>entire modelling stack: no <span class="in">`MultiTask`</span>, no <span class="in">`ConfigEntsoe`</span>, no tuning, no</span>
+<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>exogenous features. The forecast is a slice of the downloaded ENTSO-E frame.</span>
+<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>Two wrinkles specific to a *forward* baseline are handled along the way --- the</span>
+<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a>safe downloader drops future rows unless asked to keep them</span>
+<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>(@sec-entsoe-query), and a UTC target day straddles two local publication days</span>
+<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>(@sec-entsoe-extract).</span>
+<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a><span class="fu">## Submission contract</span></span>
+<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>Unchanged --- see @sec-live-contract for the CSV schema, deadline, and</span>
+<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a>scoring rules. The leaderboard validator that runs against this chapter's</span>
+<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a>output is byte-identical to the one used by @sec-live-submission. The only</span>
+<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a>difference is the path: <span class="in">`submissions/entsoe/&lt;YYYY-MM-DD&gt;.csv`</span>.</span>
+<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a><span class="fu">## Team identity {#sec-entsoe-identity}</span></span>
+<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a><span class="in">`entsoe`</span> is hardcoded throughout this chapter --- there is no placeholder to</span>
+<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a>edit. The cell below confirms the team is registered in</span>
+<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a><span class="in">`challenge-leaderboard/teams.yml`</span>.</span>
+<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-registry</span></span>
+<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> yaml</span>
+<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>teams_yml <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"workspace"</span> <span class="op">/</span> <span class="st">"challenge-leaderboard"</span> <span class="op">/</span> <span class="st">"teams.yml"</span></span>
+<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a>teams <span class="op">=</span> yaml.safe_load(teams_yml.read_text())[<span class="st">"teams"</span>]</span>
+<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a>team <span class="op">=</span> <span class="bu">next</span>((t <span class="cf">for</span> t <span class="kw">in</span> teams <span class="cf">if</span> t[<span class="st">"id"</span>] <span class="op">==</span> <span class="st">"entsoe"</span>), <span class="va">None</span>)</span>
+<span id="cb19-64"><a href="#cb19-64" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> team <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>, <span class="st">"entsoe is not in challenge-leaderboard/teams.yml"</span></span>
+<span id="cb19-65"><a href="#cb19-65" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"entsoe display_name : </span><span class="sc">{</span>team[<span class="st">'display_name'</span>]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-66"><a href="#cb19-66" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"entsoe github       : </span><span class="sc">{</span><span class="st">', '</span><span class="sc">.</span>join(team[<span class="st">'github_handles'</span>])<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-67"><a href="#cb19-67" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-68"><a href="#cb19-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-69"><a href="#cb19-69" aria-hidden="true" tabindex="-1"></a><span class="in">`validate_authorship()`</span> in <span class="in">`scripts/validate_submission.py:89`</span> rejects PRs</span>
+<span id="cb19-70"><a href="#cb19-70" aria-hidden="true" tabindex="-1"></a>whose author is not in this <span class="in">`github_handles`</span> list, so the <span class="in">`gh auth login`</span></span>
+<span id="cb19-71"><a href="#cb19-71" aria-hidden="true" tabindex="-1"></a>account used in @sec-entsoe-push must match.</span>
+<span id="cb19-72"><a href="#cb19-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-73"><a href="#cb19-73" aria-hidden="true" tabindex="-1"></a><span class="fu">## Prerequisites and walkthrough</span></span>
+<span id="cb19-74"><a href="#cb19-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-75"><a href="#cb19-75" aria-hidden="true" tabindex="-1"></a>Identical to @sec-live-walkthrough: Python 3.13 + uv, a personal ENTSO-E API</span>
+<span id="cb19-76"><a href="#cb19-76" aria-hidden="true" tabindex="-1"></a>key exported as <span class="in">`ENTSOE_API_KEY`</span>, <span class="in">`gh auth login`</span> as a registered <span class="in">`entsoe`</span></span>
+<span id="cb19-77"><a href="#cb19-77" aria-hidden="true" tabindex="-1"></a>handle, and a sibling clone of <span class="in">`challenge-leaderboard`</span> at</span>
+<span id="cb19-78"><a href="#cb19-78" aria-hidden="true" tabindex="-1"></a><span class="in">`~/workspace/challenge-leaderboard/`</span>. Because there is no model to train, this</span>
+<span id="cb19-79"><a href="#cb19-79" aria-hidden="true" tabindex="-1"></a>chapter renders in seconds --- it issues a single API call and slices it.</span>
+<span id="cb19-80"><a href="#cb19-80" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-81"><a href="#cb19-81" aria-hidden="true" tabindex="-1"></a><span class="fu">## Live pipeline {#sec-entsoe-example}</span></span>
+<span id="cb19-82"><a href="#cb19-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-85"><a href="#cb19-85" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-86"><a href="#cb19-86" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-imports</span></span>
+<span id="cb19-87"><a href="#cb19-87" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-88"><a href="#cb19-88" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb19-89"><a href="#cb19-89" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb19-90"><a href="#cb19-90" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb19-91"><a href="#cb19-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-92"><a href="#cb19-92" aria-hidden="true" tabindex="-1"></a><span class="co"># Isolate this chapter's storage from chapters 13 and 14 (each pins its own</span></span>
+<span id="cb19-93"><a href="#cb19-93" aria-hidden="true" tabindex="-1"></a><span class="co"># download home so the three chapters never read or write the same interim</span></span>
+<span id="cb19-94"><a href="#cb19-94" aria-hidden="true" tabindex="-1"></a><span class="co"># file). The package reads the env var at call time via get_data_home().</span></span>
+<span id="cb19-95"><a href="#cb19-95" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"SPOTFORECAST2_DATA"</span>]  <span class="op">=</span> <span class="bu">str</span>(Path.home() <span class="op">/</span> <span class="st">"spotforecast2_data"</span>  <span class="op">/</span> <span class="st">"ddmo_ch15_entsoe"</span>)</span>
+<span id="cb19-96"><a href="#cb19-96" aria-hidden="true" tabindex="-1"></a>os.environ[<span class="st">"SPOTFORECAST2_CACHE"</span>] <span class="op">=</span> <span class="bu">str</span>(Path.home() <span class="op">/</span> <span class="st">".spotforecast2_cache"</span> <span class="op">/</span> <span class="st">"ddmo_ch15_entsoe"</span>)</span>
+<span id="cb19-97"><a href="#cb19-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-98"><a href="#cb19-98" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spotforecast2_safe.downloader.entsoe <span class="im">import</span> download_new_data</span>
+<span id="cb19-99"><a href="#cb19-99" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spotforecast2_safe.data.fetch_data <span class="im">import</span> get_data_home</span>
+<span id="cb19-100"><a href="#cb19-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-101"><a href="#cb19-101" aria-hidden="true" tabindex="-1"></a>api_key <span class="op">=</span> os.environ.get(<span class="st">"ENTSOE_API_KEY"</span>)</span>
+<span id="cb19-102"><a href="#cb19-102" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> api_key, <span class="st">"ENTSOE_API_KEY must be set in the environment (see @sec-live-walkthrough Step 3)."</span></span>
+<span id="cb19-103"><a href="#cb19-103" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-104"><a href="#cb19-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-105"><a href="#cb19-105" aria-hidden="true" tabindex="-1"></a><span class="fu">### Dynamic date constants</span></span>
+<span id="cb19-106"><a href="#cb19-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-107"><a href="#cb19-107" aria-hidden="true" tabindex="-1"></a>Every date is derived from <span class="in">`pd.Timestamp.now(tz="UTC").normalize()`</span> so the</span>
+<span id="cb19-108"><a href="#cb19-108" aria-hidden="true" tabindex="-1"></a>chapter stays correct on every render --- same convention as @sec-live-example.</span>
+<span id="cb19-109"><a href="#cb19-109" aria-hidden="true" tabindex="-1"></a><span class="in">`y_0`</span> is tomorrow's UTC day (00:00–23:00 UTC), the 24 hourly stamps the</span>
+<span id="cb19-110"><a href="#cb19-110" aria-hidden="true" tabindex="-1"></a>leaderboard scores.</span>
+<span id="cb19-111"><a href="#cb19-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-114"><a href="#cb19-114" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-115"><a href="#cb19-115" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-constants</span></span>
+<span id="cb19-116"><a href="#cb19-116" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-117"><a href="#cb19-117" aria-hidden="true" tabindex="-1"></a>NOW_UTC <span class="op">=</span> pd.Timestamp.now(tz<span class="op">=</span><span class="st">"UTC"</span>)</span>
+<span id="cb19-118"><a href="#cb19-118" aria-hidden="true" tabindex="-1"></a>TODAY_UTC <span class="op">=</span> NOW_UTC.normalize()</span>
+<span id="cb19-119"><a href="#cb19-119" aria-hidden="true" tabindex="-1"></a>TOMORROW_UTC <span class="op">=</span> TODAY_UTC <span class="op">+</span> pd.Timedelta(days<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb19-120"><a href="#cb19-120" aria-hidden="true" tabindex="-1"></a>LAST_TARGET <span class="op">=</span> TOMORROW_UTC <span class="op">+</span> pd.Timedelta(hours<span class="op">=</span><span class="dv">23</span>)</span>
+<span id="cb19-121"><a href="#cb19-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-122"><a href="#cb19-122" aria-hidden="true" tabindex="-1"></a><span class="co"># A day-ahead baseline needs no training history --- only a short recent window:</span></span>
+<span id="cb19-123"><a href="#cb19-123" aria-hidden="true" tabindex="-1"></a><span class="co"># enough to carry the last week of `Actual Load` for the context plot plus a</span></span>
+<span id="cb19-124"><a href="#cb19-124" aria-hidden="true" tabindex="-1"></a><span class="co"># previous-day fallback (@sec-entsoe-extract). We download the last 10 days and</span></span>
+<span id="cb19-125"><a href="#cb19-125" aria-hidden="true" tabindex="-1"></a><span class="co"># reach the end through the day *after* tomorrow so the full target day is</span></span>
+<span id="cb19-126"><a href="#cb19-126" aria-hidden="true" tabindex="-1"></a><span class="co"># covered as soon as ENTSO-E publishes it. download_new_data takes the window as</span></span>
+<span id="cb19-127"><a href="#cb19-127" aria-hidden="true" tabindex="-1"></a><span class="co"># 'YYYYMMDDHH00' strings.</span></span>
+<span id="cb19-128"><a href="#cb19-128" aria-hidden="true" tabindex="-1"></a>START_DOWNLOAD <span class="op">=</span> (TODAY_UTC <span class="op">-</span> pd.Timedelta(days<span class="op">=</span><span class="dv">10</span>)).strftime(<span class="st">"%Y%m</span><span class="sc">%d</span><span class="st">%H%M"</span>)</span>
+<span id="cb19-129"><a href="#cb19-129" aria-hidden="true" tabindex="-1"></a>END_DOWNLOAD <span class="op">=</span> (TOMORROW_UTC <span class="op">+</span> pd.Timedelta(days<span class="op">=</span><span class="dv">1</span>)).strftime(<span class="st">"%Y%m</span><span class="sc">%d</span><span class="st">%H%M"</span>)</span>
+<span id="cb19-130"><a href="#cb19-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-131"><a href="#cb19-131" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NOW_UTC        = </span><span class="sc">{</span>NOW_UTC<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-132"><a href="#cb19-132" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TODAY_UTC      = </span><span class="sc">{</span>TODAY_UTC<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-133"><a href="#cb19-133" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TOMORROW_UTC   = </span><span class="sc">{</span>TOMORROW_UTC<span class="sc">}</span><span class="ss">  (target day = y_0)"</span>)</span>
+<span id="cb19-134"><a href="#cb19-134" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"LAST_TARGET    = </span><span class="sc">{</span>LAST_TARGET<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-135"><a href="#cb19-135" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"START_DOWNLOAD = </span><span class="sc">{</span>START_DOWNLOAD<span class="sc">}</span><span class="ss">  (10 days back --- no training history)"</span>)</span>
+<span id="cb19-136"><a href="#cb19-136" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"END_DOWNLOAD   = </span><span class="sc">{</span>END_DOWNLOAD<span class="sc">}</span><span class="ss">  (covers tomorrow's day-ahead forecast)"</span>)</span>
+<span id="cb19-137"><a href="#cb19-137" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-138"><a href="#cb19-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-139"><a href="#cb19-139" aria-hidden="true" tabindex="-1"></a><span class="fu">### Download ENTSO-E's day-ahead `Forecasted Load` {#sec-entsoe-query}</span></span>
+<span id="cb19-140"><a href="#cb19-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-141"><a href="#cb19-141" aria-hidden="true" tabindex="-1"></a>We fetch through the same safe wrapper the training chapters use,</span>
+<span id="cb19-142"><a href="#cb19-142" aria-hidden="true" tabindex="-1"></a><span class="in">`spotforecast2_safe.downloader.entsoe.download_new_data`</span>, with one argument</span>
+<span id="cb19-143"><a href="#cb19-143" aria-hidden="true" tabindex="-1"></a>that matters here: <span class="in">`keep_forecast_future=True`</span>. By default the wrapper drops</span>
+<span id="cb19-144"><a href="#cb19-144" aria-hidden="true" tabindex="-1"></a>every row after <span class="in">`now`</span> when it merges the download into the interim file ---</span>
+<span id="cb19-145"><a href="#cb19-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-146"><a href="#cb19-146" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb19-147"><a href="#cb19-147" aria-hidden="true" tabindex="-1"></a><span class="co"># spotforecast2_safe/downloader/entsoe.py</span></span>
+<span id="cb19-148"><a href="#cb19-148" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> keep_forecast_future:</span>
+<span id="cb19-149"><a href="#cb19-149" aria-hidden="true" tabindex="-1"></a>    merged_df <span class="op">=</span> merged_df.loc[merged_df.index <span class="op">&lt;=</span> pd.Timestamp.now(tz<span class="op">=</span><span class="st">"UTC"</span>)]</span>
+<span id="cb19-150"><a href="#cb19-150" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-151"><a href="#cb19-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-152"><a href="#cb19-152" aria-hidden="true" tabindex="-1"></a>That truncation is correct for the training chapters (a model must never see</span>
+<span id="cb19-153"><a href="#cb19-153" aria-hidden="true" tabindex="-1"></a>the future), but it would erase the very thing this baseline submits: ENTSO-E's</span>
+<span id="cb19-154"><a href="#cb19-154" aria-hidden="true" tabindex="-1"></a>day-ahead <span class="in">`Forecasted Load`</span> for tomorrow. The flag keeps those future rows;</span>
+<span id="cb19-155"><a href="#cb19-155" aria-hidden="true" tabindex="-1"></a>future <span class="in">`Actual Load`</span> is still blank, so nothing leaks --- there is no model</span>
+<span id="cb19-156"><a href="#cb19-156" aria-hidden="true" tabindex="-1"></a>here in any case. ENTSO-E's <span class="in">`Forecasted Load`</span> is published per *local*</span>
+<span id="cb19-157"><a href="#cb19-157" aria-hidden="true" tabindex="-1"></a>(Europe/Berlin) day; the wrapper normalises the merged interim index to UTC,</span>
+<span id="cb19-158"><a href="#cb19-158" aria-hidden="true" tabindex="-1"></a>the zone the leaderboard scores in.</span>
+<span id="cb19-159"><a href="#cb19-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-162"><a href="#cb19-162" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-163"><a href="#cb19-163" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-query</span></span>
+<span id="cb19-164"><a href="#cb19-164" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-165"><a href="#cb19-165" aria-hidden="true" tabindex="-1"></a>download_new_data(</span>
+<span id="cb19-166"><a href="#cb19-166" aria-hidden="true" tabindex="-1"></a>    api_key<span class="op">=</span>api_key,</span>
+<span id="cb19-167"><a href="#cb19-167" aria-hidden="true" tabindex="-1"></a>    country_code<span class="op">=</span><span class="st">"DE"</span>,</span>
+<span id="cb19-168"><a href="#cb19-168" aria-hidden="true" tabindex="-1"></a>    start<span class="op">=</span>START_DOWNLOAD,</span>
+<span id="cb19-169"><a href="#cb19-169" aria-hidden="true" tabindex="-1"></a>    end<span class="op">=</span>END_DOWNLOAD,</span>
+<span id="cb19-170"><a href="#cb19-170" aria-hidden="true" tabindex="-1"></a>    force<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb19-171"><a href="#cb19-171" aria-hidden="true" tabindex="-1"></a>    keep_forecast_future<span class="op">=</span><span class="va">True</span>,   <span class="co"># keep tomorrow's day-ahead forecast</span></span>
+<span id="cb19-172"><a href="#cb19-172" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-173"><a href="#cb19-173" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-174"><a href="#cb19-174" aria-hidden="true" tabindex="-1"></a>interim_csv <span class="op">=</span> get_data_home() <span class="op">/</span> <span class="st">"interim"</span> <span class="op">/</span> <span class="st">"energy_load.csv"</span></span>
+<span id="cb19-175"><a href="#cb19-175" aria-hidden="true" tabindex="-1"></a>interim <span class="op">=</span> pd.read_csv(interim_csv, index_col<span class="op">=</span><span class="dv">0</span>, parse_dates<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-176"><a href="#cb19-176" aria-hidden="true" tabindex="-1"></a>interim.index <span class="op">=</span> pd.to_datetime(interim.index, utc<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-177"><a href="#cb19-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-178"><a href="#cb19-178" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"interim rows       : </span><span class="sc">{</span><span class="bu">len</span>(interim)<span class="sc">}</span><span class="ss"> (15-min, </span><span class="sc">{</span>interim<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>interim<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb19-179"><a href="#cb19-179" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"columns            : </span><span class="sc">{</span><span class="bu">list</span>(interim.columns)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-180"><a href="#cb19-180" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Forecasted Load to : </span><span class="sc">{</span>interim[<span class="st">'Forecasted Load'</span>]<span class="sc">.</span>dropna()<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-181"><a href="#cb19-181" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Actual Load to     : </span><span class="sc">{</span>interim[<span class="st">'Actual Load'</span>]<span class="sc">.</span>dropna()<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-182"><a href="#cb19-182" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-183"><a href="#cb19-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-184"><a href="#cb19-184" aria-hidden="true" tabindex="-1"></a>We aggregate the 15-minute series onto the hourly grid the leaderboard scores</span>
+<span id="cb19-185"><a href="#cb19-185" aria-hidden="true" tabindex="-1"></a>on --- the mean of each hour's four quarter-hour values, matching how the</span>
+<span id="cb19-186"><a href="#cb19-186" aria-hidden="true" tabindex="-1"></a>tuned chapters aggregate the actuals.</span>
+<span id="cb19-187"><a href="#cb19-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-190"><a href="#cb19-190" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-191"><a href="#cb19-191" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-hourly</span></span>
+<span id="cb19-192"><a href="#cb19-192" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-193"><a href="#cb19-193" aria-hidden="true" tabindex="-1"></a>forecast_h <span class="op">=</span> interim[<span class="st">"Forecasted Load"</span>].resample(<span class="st">"h"</span>).mean().dropna()</span>
+<span id="cb19-194"><a href="#cb19-194" aria-hidden="true" tabindex="-1"></a>actual_h <span class="op">=</span> interim[<span class="st">"Actual Load"</span>].resample(<span class="st">"h"</span>).mean().dropna()</span>
+<span id="cb19-195"><a href="#cb19-195" aria-hidden="true" tabindex="-1"></a>forecast_h.name <span class="op">=</span> <span class="st">"Forecasted Load"</span></span>
+<span id="cb19-196"><a href="#cb19-196" aria-hidden="true" tabindex="-1"></a>actual_h.name <span class="op">=</span> <span class="st">"Actual Load"</span></span>
+<span id="cb19-197"><a href="#cb19-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-198"><a href="#cb19-198" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"hourly forecast : </span><span class="sc">{</span><span class="bu">len</span>(forecast_h)<span class="sc">}</span><span class="ss"> h | </span><span class="sc">{</span>forecast_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>forecast_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-199"><a href="#cb19-199" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"hourly actual   : </span><span class="sc">{</span><span class="bu">len</span>(actual_h)<span class="sc">}</span><span class="ss"> h | </span><span class="sc">{</span>actual_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>actual_h<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-200"><a href="#cb19-200" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-201"><a href="#cb19-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-202"><a href="#cb19-202" aria-hidden="true" tabindex="-1"></a><span class="fu">### Assemble the 24-hour target slice {#sec-entsoe-extract}</span></span>
+<span id="cb19-203"><a href="#cb19-203" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-204"><a href="#cb19-204" aria-hidden="true" tabindex="-1"></a>The target is the 24 UTC hours of tomorrow, <span class="in">`00:00 … 23:00`</span>. ENTSO-E publishes</span>
+<span id="cb19-205"><a href="#cb19-205" aria-hidden="true" tabindex="-1"></a>its day-ahead forecast per *local* (Europe/Berlin) day, and Germany runs one</span>
+<span id="cb19-206"><a href="#cb19-206" aria-hidden="true" tabindex="-1"></a>or two hours ahead of UTC. So at submission time --- the afternoon of <span class="in">`D-1`</span>,</span>
+<span id="cb19-207"><a href="#cb19-207" aria-hidden="true" tabindex="-1"></a>when only the local <span class="in">`D`</span> day-ahead is out --- the last one or two UTC hours of</span>
+<span id="cb19-208"><a href="#cb19-208" aria-hidden="true" tabindex="-1"></a>the target (<span class="in">`22:00`</span>, <span class="in">`23:00`</span> UTC) fall into the *next* local day, which ENTSO-E</span>
+<span id="cb19-209"><a href="#cb19-209" aria-hidden="true" tabindex="-1"></a>does not publish until <span class="in">`D`</span>, after the <span class="in">`D-1 23:59 UTC`</span> deadline.</span>
+<span id="cb19-210"><a href="#cb19-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-211"><a href="#cb19-211" aria-hidden="true" tabindex="-1"></a>Those trailing hours are therefore filled with ENTSO-E's own forecast for the</span>
+<span id="cb19-212"><a href="#cb19-212" aria-hidden="true" tabindex="-1"></a>same clock hour 24 hours earlier --- a transparent, fully reproducible</span>
+<span id="cb19-213"><a href="#cb19-213" aria-hidden="true" tabindex="-1"></a>persistence of the operators' published forecast (today's day-ahead is already</span>
+<span id="cb19-214"><a href="#cb19-214" aria-hidden="true" tabindex="-1"></a>complete, so the fallback source always exists). The fill is logged, and a</span>
+<span id="cb19-215"><a href="#cb19-215" aria-hidden="true" tabindex="-1"></a>fail-loud guard (CR-3) aborts if even the fallback is missing rather than</span>
+<span id="cb19-216"><a href="#cb19-216" aria-hidden="true" tabindex="-1"></a>writing a short or NaN-padded CSV.</span>
+<span id="cb19-217"><a href="#cb19-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-220"><a href="#cb19-220" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-221"><a href="#cb19-221" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-extract</span></span>
+<span id="cb19-222"><a href="#cb19-222" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-223"><a href="#cb19-223" aria-hidden="true" tabindex="-1"></a>target_index <span class="op">=</span> pd.date_range(TOMORROW_UTC, LAST_TARGET, freq<span class="op">=</span><span class="st">"h"</span>, tz<span class="op">=</span><span class="st">"UTC"</span>)  <span class="co"># 24 stamps</span></span>
+<span id="cb19-224"><a href="#cb19-224" aria-hidden="true" tabindex="-1"></a>y0 <span class="op">=</span> forecast_h.reindex(target_index)</span>
+<span id="cb19-225"><a href="#cb19-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-226"><a href="#cb19-226" aria-hidden="true" tabindex="-1"></a>published <span class="op">=</span> <span class="bu">int</span>(y0.notna().<span class="bu">sum</span>())</span>
+<span id="cb19-227"><a href="#cb19-227" aria-hidden="true" tabindex="-1"></a>missing <span class="op">=</span> y0.index[y0.isna()]</span>
+<span id="cb19-228"><a href="#cb19-228" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"day-ahead hours published for </span><span class="sc">{</span>TOMORROW_UTC<span class="sc">.</span>date()<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>published<span class="sc">}</span><span class="ss"> / 24"</span>)</span>
+<span id="cb19-229"><a href="#cb19-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-230"><a href="#cb19-230" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ts <span class="kw">in</span> missing:</span>
+<span id="cb19-231"><a href="#cb19-231" aria-hidden="true" tabindex="-1"></a>    fallback <span class="op">=</span> forecast_h.reindex([ts <span class="op">-</span> pd.Timedelta(days<span class="op">=</span><span class="dv">1</span>)]).iloc[<span class="dv">0</span>]</span>
+<span id="cb19-232"><a href="#cb19-232" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> pd.isna(fallback):</span>
+<span id="cb19-233"><a href="#cb19-233" aria-hidden="true" tabindex="-1"></a>        <span class="cf">raise</span> <span class="pp">RuntimeError</span>(</span>
+<span id="cb19-234"><a href="#cb19-234" aria-hidden="true" tabindex="-1"></a>            <span class="ss">f"No day-ahead value for </span><span class="sc">{</span>ts<span class="sc">}</span><span class="ss"> and no 24 h-earlier fallback either; "</span></span>
+<span id="cb19-235"><a href="#cb19-235" aria-hidden="true" tabindex="-1"></a>            <span class="st">"ENTSO-E coverage is too thin to assemble 24 hours. Re-render once "</span></span>
+<span id="cb19-236"><a href="#cb19-236" aria-hidden="true" tabindex="-1"></a>            <span class="st">"the day-ahead forecast for the target day is published."</span></span>
+<span id="cb19-237"><a href="#cb19-237" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb19-238"><a href="#cb19-238" aria-hidden="true" tabindex="-1"></a>    y0.loc[ts] <span class="op">=</span> fallback</span>
+<span id="cb19-239"><a href="#cb19-239" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  filled </span><span class="sc">{</span>ts<span class="sc">}</span><span class="ss"> ← </span><span class="sc">{</span>ts <span class="op">-</span> pd<span class="sc">.</span>Timedelta(days<span class="op">=</span><span class="dv">1</span>)<span class="sc">}</span><span class="ss"> (24 h-earlier ENTSO-E forecast = </span><span class="sc">{</span>fallback<span class="sc">:,.0f}</span><span class="ss"> MW)"</span>)</span>
+<span id="cb19-240"><a href="#cb19-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-241"><a href="#cb19-241" aria-hidden="true" tabindex="-1"></a>y0.name <span class="op">=</span> <span class="st">"Forecasted Load"</span></span>
+<span id="cb19-242"><a href="#cb19-242" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">y_0 assembled: </span><span class="sc">{</span><span class="bu">len</span>(y0)<span class="sc">}</span><span class="ss"> hourly steps | </span><span class="sc">{</span>y0<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> → </span><span class="sc">{</span>y0<span class="sc">.</span>index<span class="sc">.</span><span class="bu">max</span>()<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-243"><a href="#cb19-243" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y0)</span>
+<span id="cb19-244"><a href="#cb19-244" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-245"><a href="#cb19-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-246"><a href="#cb19-246" aria-hidden="true" tabindex="-1"></a><span class="fu">### Visual inspection</span></span>
+<span id="cb19-247"><a href="#cb19-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-248"><a href="#cb19-248" aria-hidden="true" tabindex="-1"></a>The plot overlays the last week of published <span class="in">`Actual Load`</span> (blue) with</span>
+<span id="cb19-249"><a href="#cb19-249" aria-hidden="true" tabindex="-1"></a>ENTSO-E's day-ahead <span class="in">`Forecasted Load`</span> running into the target day (orange).</span>
+<span id="cb19-250"><a href="#cb19-250" aria-hidden="true" tabindex="-1"></a>The 24 hourly values we submit are the shaded block; any fallback-filled</span>
+<span id="cb19-251"><a href="#cb19-251" aria-hidden="true" tabindex="-1"></a>trailing hours are marked.</span>
+<span id="cb19-252"><a href="#cb19-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-255"><a href="#cb19-255" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-256"><a href="#cb19-256" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-entsoe-forecast</span></span>
+<span id="cb19-257"><a href="#cb19-257" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-258"><a href="#cb19-258" aria-hidden="true" tabindex="-1"></a><span class="co">#| cache: false</span></span>
+<span id="cb19-259"><a href="#cb19-259" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "ENTSO-E DE day-ahead baseline. Blue: the last week of published `Actual Load`. Orange: ENTSO-E's day-ahead `Forecasted Load`. The 24 hourly values for `y_0` (shaded) are exactly the CSV we submit; red crosses mark any trailing UTC hour filled from the 24 h-earlier forecast (@sec-entsoe-extract)."</span></span>
+<span id="cb19-260"><a href="#cb19-260" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb19-261"><a href="#cb19-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-262"><a href="#cb19-262" aria-hidden="true" tabindex="-1"></a>LAST_WEEK_START <span class="op">=</span> TODAY_UTC <span class="op">-</span> pd.Timedelta(days<span class="op">=</span><span class="dv">7</span>)</span>
+<span id="cb19-263"><a href="#cb19-263" aria-hidden="true" tabindex="-1"></a>actual_view <span class="op">=</span> actual_h.loc[LAST_WEEK_START:]</span>
+<span id="cb19-264"><a href="#cb19-264" aria-hidden="true" tabindex="-1"></a>fc_view <span class="op">=</span> forecast_h.loc[LAST_WEEK_START:]</span>
+<span id="cb19-265"><a href="#cb19-265" aria-hidden="true" tabindex="-1"></a>filled <span class="op">=</span> y0.index[<span class="op">~</span>y0.index.isin(forecast_h.index)]</span>
+<span id="cb19-266"><a href="#cb19-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-267"><a href="#cb19-267" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">8.5</span>, <span class="fl">3.5</span>))</span>
+<span id="cb19-268"><a href="#cb19-268" aria-hidden="true" tabindex="-1"></a>ax.plot(actual_view.index, actual_view.values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#1F4E79"</span>,</span>
+<span id="cb19-269"><a href="#cb19-269" aria-hidden="true" tabindex="-1"></a>        lw<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"Actual Load (published)"</span>)</span>
+<span id="cb19-270"><a href="#cb19-270" aria-hidden="true" tabindex="-1"></a>ax.plot(fc_view.index, fc_view.values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#E07B00"</span>,</span>
+<span id="cb19-271"><a href="#cb19-271" aria-hidden="true" tabindex="-1"></a>        lw<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"ENTSO-E day-ahead forecast"</span>)</span>
+<span id="cb19-272"><a href="#cb19-272" aria-hidden="true" tabindex="-1"></a>ax.plot(y0.index, y0.values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#E07B00"</span>, lw<span class="op">=</span><span class="dv">0</span>, marker<span class="op">=</span><span class="st">"o"</span>, ms<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb19-273"><a href="#cb19-273" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">len</span>(filled):</span>
+<span id="cb19-274"><a href="#cb19-274" aria-hidden="true" tabindex="-1"></a>    ax.plot(filled, y0.loc[filled].values <span class="op">/</span> <span class="dv">1000</span>, color<span class="op">=</span><span class="st">"#B22222"</span>, lw<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb19-275"><a href="#cb19-275" aria-hidden="true" tabindex="-1"></a>            marker<span class="op">=</span><span class="st">"x"</span>, ms<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"fallback (24 h-earlier forecast)"</span>)</span>
+<span id="cb19-276"><a href="#cb19-276" aria-hidden="true" tabindex="-1"></a>ax.axvspan(TOMORROW_UTC, LAST_TARGET, color<span class="op">=</span><span class="st">"#E07B00"</span>, alpha<span class="op">=</span><span class="fl">0.10</span>,</span>
+<span id="cb19-277"><a href="#cb19-277" aria-hidden="true" tabindex="-1"></a>           label<span class="op">=</span><span class="st">"target day (y_0)"</span>)</span>
+<span id="cb19-278"><a href="#cb19-278" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">"Time (UTC)"</span>)</span>
+<span id="cb19-279"><a href="#cb19-279" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">"Load [GW]"</span>)</span>
+<span id="cb19-280"><a href="#cb19-280" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"ENTSO-E DE day-ahead baseline --- last week + target day"</span>)</span>
+<span id="cb19-281"><a href="#cb19-281" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>, color<span class="op">=</span><span class="st">"#E5E5E5"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb19-282"><a href="#cb19-282" aria-hidden="true" tabindex="-1"></a>ax.legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb19-283"><a href="#cb19-283" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s <span class="kw">in</span> (<span class="st">"top"</span>, <span class="st">"right"</span>):</span>
+<span id="cb19-284"><a href="#cb19-284" aria-hidden="true" tabindex="-1"></a>    ax.spines[s].set_visible(<span class="va">False</span>)</span>
+<span id="cb19-285"><a href="#cb19-285" aria-hidden="true" tabindex="-1"></a>fig.autofmt_xdate()</span>
+<span id="cb19-286"><a href="#cb19-286" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb19-287"><a href="#cb19-287" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb19-288"><a href="#cb19-288" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-289"><a href="#cb19-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-290"><a href="#cb19-290" aria-hidden="true" tabindex="-1"></a><span class="fu">### Validate the schema and write the submission CSV {#sec-entsoe-write}</span></span>
+<span id="cb19-291"><a href="#cb19-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-292"><a href="#cb19-292" aria-hidden="true" tabindex="-1"></a>The same four contract assertions as @sec-live-example guard the write: 24</span>
+<span id="cb19-293"><a href="#cb19-293" aria-hidden="true" tabindex="-1"></a>rows, the first stamp must be <span class="in">`TOMORROW 00:00 UTC`</span>, every value strictly</span>
+<span id="cb19-294"><a href="#cb19-294" aria-hidden="true" tabindex="-1"></a>positive, no NaN. Any violation aborts before the file is opened, so a</span>
+<span id="cb19-295"><a href="#cb19-295" aria-hidden="true" tabindex="-1"></a>partially-written CSV can never reach the leaderboard.</span>
+<span id="cb19-296"><a href="#cb19-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-299"><a href="#cb19-299" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-300"><a href="#cb19-300" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-submission-write</span></span>
+<span id="cb19-301"><a href="#cb19-301" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-302"><a href="#cb19-302" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(y0) <span class="op">==</span> <span class="dv">24</span>,           <span class="ss">f"expected 24 hourly steps for y_0, got </span><span class="sc">{</span><span class="bu">len</span>(y0)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb19-303"><a href="#cb19-303" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> y0.index.<span class="bu">min</span>() <span class="op">==</span> TOMORROW_UTC, (</span>
+<span id="cb19-304"><a href="#cb19-304" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f"first step </span><span class="sc">{</span>y0<span class="sc">.</span>index<span class="sc">.</span><span class="bu">min</span>()<span class="sc">}</span><span class="ss"> != TOMORROW </span><span class="sc">{</span>TOMORROW_UTC<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb19-305"><a href="#cb19-305" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-306"><a href="#cb19-306" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> (y0 <span class="op">&gt;</span> <span class="dv">0</span>).<span class="bu">all</span>(),          <span class="st">"non-positive forecast value --- spec requires &gt; 0"</span></span>
+<span id="cb19-307"><a href="#cb19-307" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> y0.notna().<span class="bu">all</span>(),        <span class="st">"NaN in forecast --- spec forbids"</span></span>
+<span id="cb19-308"><a href="#cb19-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-309"><a href="#cb19-309" aria-hidden="true" tabindex="-1"></a>TEAM_ID <span class="op">=</span> <span class="st">"entsoe"</span></span>
+<span id="cb19-310"><a href="#cb19-310" aria-hidden="true" tabindex="-1"></a>SUBMISSION_DIR <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"workspace"</span> <span class="op">/</span> <span class="st">"challenge-leaderboard"</span> <span class="op">/</span> <span class="st">"submissions"</span> <span class="op">/</span> TEAM_ID</span>
+<span id="cb19-311"><a href="#cb19-311" aria-hidden="true" tabindex="-1"></a>SUBMISSION_DIR.mkdir(parents<span class="op">=</span><span class="va">True</span>, exist_ok<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-312"><a href="#cb19-312" aria-hidden="true" tabindex="-1"></a>submission_path <span class="op">=</span> SUBMISSION_DIR <span class="op">/</span> <span class="ss">f"</span><span class="sc">{</span>TOMORROW_UTC<span class="sc">.</span>date()<span class="sc">.</span>isoformat()<span class="sc">}</span><span class="ss">.csv"</span></span>
+<span id="cb19-313"><a href="#cb19-313" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-314"><a href="#cb19-314" aria-hidden="true" tabindex="-1"></a>submission_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb19-315"><a href="#cb19-315" aria-hidden="true" tabindex="-1"></a>    <span class="st">"timestamp_utc"</span>: y0.index.strftime(<span class="st">"%Y-%m-</span><span class="sc">%d</span><span class="st">T%H:%M:%SZ"</span>),</span>
+<span id="cb19-316"><a href="#cb19-316" aria-hidden="true" tabindex="-1"></a>    <span class="st">"forecast_mw"</span>:   y0.<span class="bu">round</span>(<span class="dv">2</span>).values,</span>
+<span id="cb19-317"><a href="#cb19-317" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb19-318"><a href="#cb19-318" aria-hidden="true" tabindex="-1"></a>submission_df.to_csv(submission_path, index<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb19-319"><a href="#cb19-319" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"wrote </span><span class="sc">{</span>submission_path<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-320"><a href="#cb19-320" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  rows: </span><span class="sc">{</span><span class="bu">len</span>(submission_df)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb19-321"><a href="#cb19-321" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"  range: </span><span class="sc">{</span>submission_df<span class="sc">.</span>forecast_mw<span class="sc">.</span><span class="bu">min</span>()<span class="sc">:.1f}</span><span class="ss">–</span><span class="sc">{</span>submission_df<span class="sc">.</span>forecast_mw<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.1f}</span><span class="ss"> MW"</span>)</span>
+<span id="cb19-322"><a href="#cb19-322" aria-hidden="true" tabindex="-1"></a>submission_df.head(<span class="dv">3</span>)</span>
+<span id="cb19-323"><a href="#cb19-323" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-324"><a href="#cb19-324" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-325"><a href="#cb19-325" aria-hidden="true" tabindex="-1"></a><span class="fu">### Local validation with the leaderboard's own script</span></span>
+<span id="cb19-326"><a href="#cb19-326" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-327"><a href="#cb19-327" aria-hidden="true" tabindex="-1"></a>A green exit code from <span class="in">`validate_submission.py`</span> is the same check that runs on</span>
+<span id="cb19-328"><a href="#cb19-328" aria-hidden="true" tabindex="-1"></a>the PR in CI. We pass <span class="in">`--skip-deadline`</span> because the chapter may be rendered</span>
+<span id="cb19-329"><a href="#cb19-329" aria-hidden="true" tabindex="-1"></a>inside the deadline window (the live CI uses the strict form without the flag).</span>
+<span id="cb19-330"><a href="#cb19-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-333"><a href="#cb19-333" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb19-334"><a href="#cb19-334" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: entsoe-validate</span></span>
+<span id="cb19-335"><a href="#cb19-335" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb19-336"><a href="#cb19-336" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> subprocess</span>
+<span id="cb19-337"><a href="#cb19-337" aria-hidden="true" tabindex="-1"></a>lb_repo <span class="op">=</span> Path.home() <span class="op">/</span> <span class="st">"workspace"</span> <span class="op">/</span> <span class="st">"challenge-leaderboard"</span></span>
+<span id="cb19-338"><a href="#cb19-338" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> subprocess.run(</span>
+<span id="cb19-339"><a href="#cb19-339" aria-hidden="true" tabindex="-1"></a>    [</span>
+<span id="cb19-340"><a href="#cb19-340" aria-hidden="true" tabindex="-1"></a>        <span class="st">"uv"</span>, <span class="st">"run"</span>, <span class="st">"python"</span>, <span class="st">"scripts/validate_submission.py"</span>,</span>
+<span id="cb19-341"><a href="#cb19-341" aria-hidden="true" tabindex="-1"></a>        <span class="st">"--path"</span>, <span class="bu">str</span>(submission_path.relative_to(lb_repo)),</span>
+<span id="cb19-342"><a href="#cb19-342" aria-hidden="true" tabindex="-1"></a>        <span class="st">"--skip-deadline"</span>,</span>
+<span id="cb19-343"><a href="#cb19-343" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb19-344"><a href="#cb19-344" aria-hidden="true" tabindex="-1"></a>    cwd<span class="op">=</span>lb_repo,</span>
+<span id="cb19-345"><a href="#cb19-345" aria-hidden="true" tabindex="-1"></a>    capture_output<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb19-346"><a href="#cb19-346" aria-hidden="true" tabindex="-1"></a>    text<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb19-347"><a href="#cb19-347" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-348"><a href="#cb19-348" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"exit code:"</span>, result.returncode)</span>
+<span id="cb19-349"><a href="#cb19-349" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"stdout   :"</span>, result.stdout.strip())</span>
+<span id="cb19-350"><a href="#cb19-350" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> result.stderr.strip():</span>
+<span id="cb19-351"><a href="#cb19-351" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"stderr   :"</span>, result.stderr.strip())</span>
+<span id="cb19-352"><a href="#cb19-352" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-353"><a href="#cb19-353" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-354"><a href="#cb19-354" aria-hidden="true" tabindex="-1"></a><span class="fu">## Commit and push the submission PR {#sec-entsoe-push}</span></span>
+<span id="cb19-355"><a href="#cb19-355" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-356"><a href="#cb19-356" aria-hidden="true" tabindex="-1"></a>The cells above only *write* the CSV --- they deliberately do not commit,</span>
+<span id="cb19-357"><a href="#cb19-357" aria-hidden="true" tabindex="-1"></a>push, or open the PR (a careless render must not be able to spam the</span>
+<span id="cb19-358"><a href="#cb19-358" aria-hidden="true" tabindex="-1"></a>leaderboard). Run the block below from a shell once the validation cell above</span>
+<span id="cb19-359"><a href="#cb19-359" aria-hidden="true" tabindex="-1"></a>is green:</span>
+<span id="cb19-360"><a href="#cb19-360" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-361"><a href="#cb19-361" aria-hidden="true" tabindex="-1"></a><span class="in">```bash</span></span>
+<span id="cb19-362"><a href="#cb19-362" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/workspace/challenge-leaderboard</span>
+<span id="cb19-363"><a href="#cb19-363" aria-hidden="true" tabindex="-1"></a><span class="co"># TARGET=$(date -u -d 'tomorrow' +%F)                # Linux equivalent</span></span>
+<span id="cb19-364"><a href="#cb19-364" aria-hidden="true" tabindex="-1"></a><span class="va">TARGET</span><span class="op">=</span><span class="va">$(</span><span class="fu">date</span> <span class="at">-u</span> <span class="at">-v+1d</span> +%F<span class="va">)</span></span>
+<span id="cb19-365"><a href="#cb19-365" aria-hidden="true" tabindex="-1"></a><span class="co"># Unique branch per attempt: re-submitting for the same target day must not</span></span>
+<span id="cb19-366"><a href="#cb19-366" aria-hidden="true" tabindex="-1"></a><span class="co"># collide with an earlier (already-merged) branch of the same name.</span></span>
+<span id="cb19-367"><a href="#cb19-367" aria-hidden="true" tabindex="-1"></a><span class="va">BRANCH</span><span class="op">=</span><span class="st">"submission/entsoe-</span><span class="va">${TARGET}</span><span class="st">-</span><span class="va">$(</span><span class="fu">date</span> <span class="at">-u</span> +%H%M%S<span class="va">)</span><span class="st">"</span></span>
+<span id="cb19-368"><a href="#cb19-368" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> switch <span class="at">-c</span> <span class="st">"</span><span class="va">$BRANCH</span><span class="st">"</span> main</span>
+<span id="cb19-369"><a href="#cb19-369" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add <span class="st">"submissions/entsoe/</span><span class="va">${TARGET}</span><span class="st">.csv"</span></span>
+<span id="cb19-370"><a href="#cb19-370" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"submission(entsoe): day-ahead baseline for </span><span class="va">${TARGET}</span><span class="st">"</span></span>
+<span id="cb19-371"><a href="#cb19-371" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> push <span class="at">-u</span> origin <span class="st">"</span><span class="va">$BRANCH</span><span class="st">"</span></span>
+<span id="cb19-372"><a href="#cb19-372" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-373"><a href="#cb19-373" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> pr create <span class="at">--base</span> main <span class="at">--repo</span> bartzbeielstein/challenge-leaderboard <span class="dt">\</span></span>
+<span id="cb19-374"><a href="#cb19-374" aria-hidden="true" tabindex="-1"></a>    <span class="at">--head</span> <span class="st">"</span><span class="va">$BRANCH</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb19-375"><a href="#cb19-375" aria-hidden="true" tabindex="-1"></a>    <span class="at">--title</span> <span class="st">"submission(entsoe): day-ahead baseline for </span><span class="va">${TARGET}</span><span class="st">"</span> <span class="dt">\</span></span>
+<span id="cb19-376"><a href="#cb19-376" aria-hidden="true" tabindex="-1"></a>    <span class="at">--body</span>  <span class="st">"Generated by ddmo-sose-26 chapter 15 (ENTSO-E day-ahead baseline)."</span></span>
+<span id="cb19-377"><a href="#cb19-377" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb19-378"><a href="#cb19-378" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-379"><a href="#cb19-379" aria-hidden="true" tabindex="-1"></a>If validation on the PR passes, auto-merge squashes the submission onto</span>
+<span id="cb19-380"><a href="#cb19-380" aria-hidden="true" tabindex="-1"></a><span class="in">`main`</span>. The next morning at 07:00 UTC the leaderboard's <span class="in">`score-daily.yml`</span> cron</span>
+<span id="cb19-381"><a href="#cb19-381" aria-hidden="true" tabindex="-1"></a>(see @sec-live-cron) scores it against ENTSO-E final actuals.</span>
+<span id="cb19-382"><a href="#cb19-382" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-383"><a href="#cb19-383" aria-hidden="true" tabindex="-1"></a>::: {.callout-warning title="Deadline"}</span>
+<span id="cb19-384"><a href="#cb19-384" aria-hidden="true" tabindex="-1"></a>Submissions for target day <span class="in">`D`</span> must be merged before <span class="in">`D-1 23:59 UTC`</span> --- the</span>
+<span id="cb19-385"><a href="#cb19-385" aria-hidden="true" tabindex="-1"></a>validator enforces this strictly. This baseline renders in seconds, but the</span>
+<span id="cb19-386"><a href="#cb19-386" aria-hidden="true" tabindex="-1"></a>local <span class="in">`D`</span> day-ahead <span class="in">`Forecasted Load`</span> is only published around midday <span class="in">`D-1`</span>;</span>
+<span id="cb19-387"><a href="#cb19-387" aria-hidden="true" tabindex="-1"></a>render after that window so the bulk of the 24 target hours come straight from</span>
+<span id="cb19-388"><a href="#cb19-388" aria-hidden="true" tabindex="-1"></a>the feed and only the one or two UTC/local boundary hours rely on the fallback.</span>
+<span id="cb19-389"><a href="#cb19-389" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb19-390"><a href="#cb19-390" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-391"><a href="#cb19-391" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why a baseline team {#sec-entsoe-why}</span></span>
+<span id="cb19-392"><a href="#cb19-392" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-393"><a href="#cb19-393" aria-hidden="true" tabindex="-1"></a>The leaderboard ranks on rolling 7-day mean MAE (@sec-live-contract). Without</span>
+<span id="cb19-394"><a href="#cb19-394" aria-hidden="true" tabindex="-1"></a>a reference point, a student team has no way to tell whether an MAE of, say,</span>
+<span id="cb19-395"><a href="#cb19-395" aria-hidden="true" tabindex="-1"></a>1500 MW is good. The <span class="in">`entsoe`</span> row supplies that reference: it is the accuracy</span>
+<span id="cb19-396"><a href="#cb19-396" aria-hidden="true" tabindex="-1"></a>the operators' own forecast achieves on the very same scoring rule. Three</span>
+<span id="cb19-397"><a href="#cb19-397" aria-hidden="true" tabindex="-1"></a>readings follow directly from its position on the board:</span>
+<span id="cb19-398"><a href="#cb19-398" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-399"><a href="#cb19-399" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>A team *above* <span class="in">`entsoe`</span> is beating the professional day-ahead forecast ---</span>
+<span id="cb19-400"><a href="#cb19-400" aria-hidden="true" tabindex="-1"></a>  a genuine result worth writing up.</span>
+<span id="cb19-401"><a href="#cb19-401" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>A team *below* <span class="in">`entsoe`</span> is being out-predicted by a free public series and</span>
+<span id="cb19-402"><a href="#cb19-402" aria-hidden="true" tabindex="-1"></a>  should revisit features or tuning before adding compute.</span>
+<span id="cb19-403"><a href="#cb19-403" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="in">`entsoe`</span>'s own day-to-day MAE variance shows the irreducible difficulty of</span>
+<span id="cb19-404"><a href="#cb19-404" aria-hidden="true" tabindex="-1"></a>  each target day --- a calm Sunday scores tighter than a volatile cold snap,</span>
+<span id="cb19-405"><a href="#cb19-405" aria-hidden="true" tabindex="-1"></a>  for everyone.</span>
+<span id="cb19-406"><a href="#cb19-406" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-407"><a href="#cb19-407" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip title="Exercises (with Claude)"}</span>
+<span id="cb19-408"><a href="#cb19-408" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>*Score the baseline yourself.* Once tomorrow becomes a past day with</span>
+<span id="cb19-409"><a href="#cb19-409" aria-hidden="true" tabindex="-1"></a>   published actuals, re-query <span class="in">`query_load_and_forecast`</span>, align <span class="in">`forecast_h`</span></span>
+<span id="cb19-410"><a href="#cb19-410" aria-hidden="true" tabindex="-1"></a>   with the realised <span class="in">`Actual Load`</span>, and compute the 24-hour MAE by hand.</span>
+<span id="cb19-411"><a href="#cb19-411" aria-hidden="true" tabindex="-1"></a>   Compare it to the leaderboard's scored value.</span>
+<span id="cb19-412"><a href="#cb19-412" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>*Beat it on one day.* Render @sec-team4-submission for the same target day</span>
+<span id="cb19-413"><a href="#cb19-413" aria-hidden="true" tabindex="-1"></a>   and compare its <span class="in">`y_0`</span> against this baseline's <span class="in">`y_0`</span>. On which hours does the</span>
+<span id="cb19-414"><a href="#cb19-414" aria-hidden="true" tabindex="-1"></a>   tuned model diverge most from ENTSO-E, and does that help or hurt once the</span>
+<span id="cb19-415"><a href="#cb19-415" aria-hidden="true" tabindex="-1"></a>   actuals land?</span>
+<span id="cb19-416"><a href="#cb19-416" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>*Probe the boundary fill.* How many UTC hours did the fallback in</span>
+<span id="cb19-417"><a href="#cb19-417" aria-hidden="true" tabindex="-1"></a>   @sec-entsoe-extract supply today, and why does that count change with the</span>
+<span id="cb19-418"><a href="#cb19-418" aria-hidden="true" tabindex="-1"></a>   season (CET vs CEST)? Discuss with Claude whether a smarter fill than 24 h</span>
+<span id="cb19-419"><a href="#cb19-419" aria-hidden="true" tabindex="-1"></a>   persistence (e.g. the same weekday last week) would be worth the complexity</span>
+<span id="cb19-420"><a href="#cb19-420" aria-hidden="true" tabindex="-1"></a>   for one or two hours.</span>
+<span id="cb19-421"><a href="#cb19-421" aria-hidden="true" tabindex="-1"></a>:::</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,37 @@
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/user/application_security/sast/#available-cicd-variables
+# Secret Detection customization: https://docs.gitlab.com/user/application_security/secret_detection/pipeline/configure/
+# Dependency Scanning customization: https://docs.gitlab.com/user/application_security/dependency_scanning/#customizing-analyzer-behavior
+# Container Scanning customization: https://docs.gitlab.com/user/application_security/container_scanning/#customizing-analyzer-behavior
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ci/variables/#cicd-variable-precedence
+stages:
+- test
+- secret-detection
+- deploy
+sast:
+  stage: test
+include:
+- template: Security/SAST.gitlab-ci.yml
+- template: Security/Secret-Detection.gitlab-ci.yml
+variables:
+  SECRET_DETECTION_ENABLED: 'true'
+secret_detection:
+  stage: secret-detection
+
+# GitLab Pages: pre-rendertes Quarto-Buch (lecture/_book) als public/ ausliefern.
+# Die HTML-Erzeugung passiert lokal beim Lehrenden via `make render`; die CI
+# kopiert nur und publisht. Damit kein zusätzlicher Quarto/LaTeX-Runner nötig.
+pages:
+  stage: deploy
+  image: alpine:3.20
+  script:
+  - test -f lecture/_book/index.html || (echo "lecture/_book/index.html fehlt --- bitte 'make render' und neu committen." && exit 1)
+  - mkdir -p public
+  - cp -a lecture/_book/. public/
+  artifacts:
+    paths:
+    - public
+    expire_in: 30 days
+  rules:
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

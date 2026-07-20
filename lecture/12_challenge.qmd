@@ -1,0 +1,824 @@
+---
+jupyter: python3
+---
+
+# Challenge: live load forecasting {#sec-challenge}
+
+::: {.callout-note title="Learning objective"}
+You take the pipeline learned in chapters 01-11 into a **live** 24-hour
+load forecast, submit a prediction for the next day every day, and
+defend your submission in an auditing sense (CR-1 to CR-4, Art. 10, 12,
+13, 15 of the AI Act). Evaluation is automatic against the ENTSO-E
+ground truth; the leaderboard is updated weekly.
+:::
+
+## Why a live challenge?
+
+Chapters 02-11 deliberately use a **frozen** time slice
+(`DATA_START = 2024-01-01`, `DATA_END = 2024-12-31`) so that every
+student obtains byte-identical results (CR-2). That advantage
+disappears the moment the model is to run *in production*: new
+measurements arrive every hour, forecasters are retrained on a rolling
+window, gaps appear unpredictably, and the AI Act still demands a
+verifiable audit trail (Art. 12) and robustness against distribution
+drift (Art. 15).
+
+The challenge simulates this live setting. You submit a forecast every
+day; an automatic evaluation workflow compares it the next day with the
+value finally published by ENTSO-E. The setup is modelled on the
+well-known scientific competitions:
+
+- **GEFCom 2012/2014/2017** [@hong14a; @hong16a; @hong19a] --- the
+  Global Energy Forecasting Competition, the academic standard for
+  load-forecasting competitions (IEEE Working Group / *International
+  Journal of Forecasting*).
+- **M4 / M5 / M6** [@makr20a; @makr22a] --- the Makridakis competitions
+  that have established conventions for rolling backtesting and
+  point/quantile evaluation.
+- **EEM Forecasting Competitions** (IEEE European Energy Market) as a
+  recurring European annual format.
+- **BDEW standard load profiles** as a German industry benchmark.
+
+Methodologically this challenge closely follows GEFCom 2017
+(hierarchical load forecasting) and M4 (rolling one-step-ahead setup).
+
+## AI Act link
+
+| Challenge rule                                          | Code rule  | AI Act      |
+|:--------------------------------------------------------|:-----------|:------------|
+| Submission deadline *before* availability of target hours | CR-3     | Art. 10, 15 |
+| Completeness of submission (24 rows, no NaN)             | CR-3      | Art. 10     |
+| Git commit timestamps auditable in CI                    | CR-1      | Art. 12     |
+| Score run deterministically reproducible                 | CR-2      | Art. 12, 15 |
+| Pinned pipeline dependencies (uv.lock)                   | CR-4      | Art. 15     |
+| Ground-truth source documented (ENTSO-E final)           | CR-1      | Art. 10, 13 |
+
+## Rules at a glance
+
+| Aspect                       | Definition                                                                  |
+|:-----------------------------|:----------------------------------------------------------------------------|
+| Target variable              | DE hourly load `Actual Load` [MW] from the ENTSO-E Transparency Platform    |
+| Horizon                      | 24 h (00:00-23:00 CET of target day *D*)                                    |
+| Submission cadence           | daily, one entry per team                                                   |
+| Deadline (target day *D*)    | *D-1* 23:59 CET --- later-arriving PRs are rejected                         |
+| Ground-truth availability    | *D+1* around 06:00 UTC (ENTSO-E *final values*)                             |
+| Score run                    | daily *D+1* 07:00 UTC via GitHub Actions cron                               |
+| Primary metric               | **MAE** [MW] over the 24 hours                                              |
+| Ranking (public)             | **Rolling 7-day mean MAE** --- moving weekly average                        |
+| Tie-break 1                  | cumulative MAE since kickoff (smaller wins)                                 |
+| Tie-break 2                  | number of valid submissions (more wins)                                     |
+| Anti-leakage                 | Deadline lies *before* the first target hour; commit timestamps verifiable in CI |
+| Leaderboard refresh          | after every score run (daily); weekly snapshot Sunday 23:55 UTC             |
+
+For orientation: the *state-of-the-art* accuracy for the German
+day-ahead load forecast is around MAPE ~3 %. A simple **weekly
+persistence** (load exactly 168 h earlier) typically yields MAPE
+5-7 % and is a useful sanity check (see @sec-accuracy).
+
+## Participation
+
+- **Team size**: 2-4 people. Solo participation is not foreseen.
+- **Registration**: until 12 May 2026 (Tuesday) by email to Prof.
+  Bartz-Beielstein, with (i) team name, (ii) team ID (short,
+  lowercase, no space, e.g. `team_lambda`), (iii) GitHub handles of
+  all members.
+- One person from the team is registered in `teams.yml` as the
+  submission owner; however, every team member may submit via PR.
+
+## GitHub onboarding {#sec-github-onboarding}
+
+Technically the challenge runs on GitHub. If you have never worked
+with it, get yourself up to speed in three steps here: create an
+account, find your handle, set up authentication. If you already use
+GitHub actively, you can skip this section and jump straight to
+@sec-submission-workflow.
+
+::: {.callout-note title="Learning objective"}
+You have a GitHub account, know your handle, have forked the
+leaderboard repo and cloned it locally. `git push` and `git pull`
+work without a password prompt.
+:::
+
+### What is GitHub, what is your handle?
+
+**GitHub** is a public hosting service for Git repositories
+(<https://github.com/>). Every account has a unique *username*, also
+called *handle* or *login*. The handle is always identical to the
+final URL component of your profile:
+
+```
+https://github.com/<handle>
+```
+
+Format: 1-39 characters, letters/digits/hyphen, no umlauts. GitHub
+ignores case when comparing --- internally everything is normalised
+to lowercase.
+
+**Why the handle matters here.** Submissions go through pull requests.
+The CI workflow `validate-pr.yml` in the leaderboard repository reads
+the author's *login* from the GitHub event when a PR arrives and
+compares it with the `github_handles` list of the relevant team in
+`teams.yml`. Anyone not on that list gets:
+
+```
+ERROR: PR author 'X' not in github_handles for team 'T': [...]
+```
+
+This implements CR-1 (identity & auditability): only you and your
+team members can submit *on behalf of your team*.
+
+### Create an account
+
+1. Open <https://github.com/signup>.
+2. Pick an email, password and *username*. **Important:** the
+   username is your future handle and should look professionally
+   solid (`tina.musterhuhn` looks more serious than `xxtina4lifexx`).
+3. Click through the email confirmation.
+4. Activate two-factor authentication (Settings -> Password and
+   authentication -> Two-factor authentication). A TOTP app like
+   Aegis or 1Password suffices.
+
+### Find your handle (for the registration email)
+
+Two reliable ways:
+
+- **Click the profile picture top right** --- the first menu item
+  ("Your profile") shows your handle.
+- **In any profile URL.** Visiting <https://github.com/> while logged
+  in redirects to `https://github.com/<handle>`.
+
+::: {.callout-important title="Send handles to the lecturer"}
+Send *all* handles of your team in the registration email,
+otherwise individual members will later be unable to submit PRs.
+Format like the example below:
+
+> *Registration team "Lambda Forecasters"*\
+> *Team-ID: `team_lambda`*\
+> *Members and handles:*
+>
+> - *Alice Mueller --- GitHub: `alice42`*
+> - *Bob Schmidt --- GitHub: `bob99`*
+> - *Carol Schulze --- GitHub: `carol7`*
+
+Corrections are possible at any time but cost one cycle: you
+report the fix by email, the lecturer commits the changed
+`teams.yml`, and you push a new (or empty) commit on your PR so
+that CI revalidates.
+:::
+
+### Set up authentication locally
+
+Otherwise `git push` asks for a password every time. Choose *one* of
+the two variants.
+
+**Variant A --- SSH key (recommended for daily use).**
+
+```sh
+ssh-keygen -t ed25519 -C "your.address@th-koeln.de"
+# Copy the public key (~/.ssh/id_ed25519.pub) to the clipboard:
+cat ~/.ssh/id_ed25519.pub
+```
+
+Then on <https://github.com/settings/keys> -> *New SSH key* -> paste
+contents -> save. Test: `ssh -T git@github.com`.
+
+**Variant B --- HTTPS with Personal Access Token.**
+
+GitHub -> Settings -> Developer settings -> Personal access tokens ->
+*Fine-grained tokens* -> *Generate new token*. Scope: read/write on
+the fork of the leaderboard repo. Enter the token as a password on
+the first `git push`; Git stores it in the credential helper.
+
+### Install the `gh` CLI (optional but practical)
+
+`gh` is GitHub's official command-line tool. It lets you fork, open
+and merge PRs without touching the browser.
+
+```sh
+# macOS:
+brew install gh
+# Windows:
+winget install --id GitHub.cli
+# Linux (Debian/Ubuntu):
+sudo apt install gh
+```
+
+One-off login: `gh auth login --web`. Then `gh auth status` is
+enough to check that everything is in place.
+
+### Fork and local clone
+
+Before you can submit, you need a **fork** of the leaderboard repo
+--- your own copy at
+`https://github.com/<your-handle>/challenge-leaderboard`. GitHub
+rejects direct pushes into the original repo (branch protection),
+and that is intentional: everything goes through pull requests.
+
+**Web UI:**
+
+1. Open <https://github.com/bartzbeielstein/challenge-leaderboard>.
+2. Click *Fork* top right -> Owner = your own account -> *Create fork*.
+3. On the fork page click *Code* -> copy the SSH (`git@github.com:...`)
+   or HTTPS (`https://github.com/...`) URL.
+4. Locally:
+
+   ```sh
+   git clone git@github.com:<your-handle>/challenge-leaderboard.git
+   cd challenge-leaderboard
+   uv sync
+   ```
+
+**CLI:**
+
+```sh
+gh repo fork bartzbeielstein/challenge-leaderboard --clone
+cd challenge-leaderboard
+uv sync
+```
+
+`uv sync` installs the Python dependencies pinned in the repo ---
+identical to the stack the CI uses for validation (CR-2).
+
+## Submission format
+
+A submission is a single CSV file with the following schema:
+
+| Column           | Type         | Meaning                                                                        |
+|:-----------------|:-------------|:--------------------------------------------------------------------------------|
+| `timestamp_utc`  | `str` (ISO)  | hour start in UTC, exactly 24 consecutive hours of the target day *D*           |
+| `forecast_mw`    | `float`      | predicted load value in megawatts, strictly positive                            |
+
+Path convention in the leaderboard repository:
+
+```
+submissions/<team_id>/<YYYY-MM-DD>.csv
+```
+
+Here `<YYYY-MM-DD>` is the target day *D* (the date *for which* the
+forecast applies --- not the submission day). Example: on 14 May
+2026 at 17:30 team `team_lambda` submits the forecast for 15 May:
+
+```
+submissions/team_lambda/2026-05-15.csv
+```
+
+A mini example of the CSV file (excerpt):
+
+```{python}
+#| label: sample-csv
+#| echo: true
+import pandas as pd
+
+sample = pd.DataFrame({
+    "timestamp_utc": [
+        "2026-05-15T00:00:00Z",
+        "2026-05-15T01:00:00Z",
+        "2026-05-15T02:00:00Z",
+        "...",
+        "2026-05-15T23:00:00Z",
+    ],
+    "forecast_mw": [48_500.0, 47_200.0, 46_400.0, "...", 52_100.0],
+})
+print(sample.to_string(index=False))
+```
+
+For a deviating schema (too many/few rows, missing column, wrong
+date, `NaN` or negative values) the CI validation workflow rejects
+the PR with a precise error line (CR-3).
+
+## Submission workflow {#sec-submission-workflow}
+
+Prep done (@sec-github-onboarding)? Then now follows the daily
+routine. It consists of a **one-time setup** and a **recurring
+submission cycle**.
+
+### One-time setup --- preconditions checklist
+
+1. Valid GitHub account and handle submitted to the lecturer
+   (@sec-github-onboarding).
+2. Fork of the leaderboard repo created and cloned locally
+   (`challenge-leaderboard/` on your disk).
+3. `uv sync` run in the repo root --- the Python stack is in place.
+4. `ENTSOE_API_KEY` is exported in the shell
+   (`export ENTSOE_API_KEY=...`). Without this key the generator
+   script cannot fetch real data.
+5. The generator script `make_submission.py` from the course repo is
+   available (see @sec-baseline-skript) --- or your own.
+
+### Submission cycle per target day
+
+In the following, `<team_id>` denotes your team's ID (e.g.
+`team_lambda`) and `<D>` the target day in `YYYY-MM-DD` format (e.g.
+`2026-05-13`).
+
+#### 1. Produce the CSV
+
+In the root directory of your local leaderboard fork:
+
+```sh
+cd .../challenge-leaderboard
+python .../lecture/scripts/make_submission.py \
+    --team <team_id> --target-date <D>
+```
+
+The script writes the file to `submissions/<team_id>/<D>.csv`.
+Inspect briefly: 24 rows, plausible values (DE load typically
+40 000 - 70 000 MW).
+
+#### 2. Create a feature branch
+
+One separate branch per submission.
+
+**CLI:**
+
+```sh
+git switch -c submission/<team_id>/<D>
+```
+
+**Web UI:** on `https://github.com/<your-handle>/challenge-leaderboard`
+open the branch dropdown top left, type the new branch name and
+confirm with *Create branch ...*. Then locally
+`git fetch && git switch submission/<team_id>/<D>`.
+
+#### 3. Add the CSV and commit
+
+::: {.callout-warning title="Exactly one file per PR"}
+`validate-pr.yml` counts the changed files under `submissions/**`
+and rejects unless there is **exactly one**. So add only the one
+new CSV, no `*` and no `-A`.
+:::
+
+```sh
+git add submissions/<team_id>/<D>.csv
+git commit -m "submission(<team_id>): forecast for <D>"
+```
+
+#### 4. Push the branch
+
+```sh
+git push -u origin submission/<team_id>/<D>
+```
+
+The success message contains a direct link to create the PR.
+
+#### 5. Open a pull request
+
+**Web UI:** GitHub shows a yellow banner *"Compare & pull
+request"* on the repo page right after the push. Click -> fill in
+title/body -> *Create pull request*. Important:
+
+- *Base repository* is `bartzbeielstein/challenge-leaderboard`
+  (the upstream, **not** your fork).
+- *Base branch* is `main`.
+- *Head repository* is your fork, *head branch* is
+  `submission/<team_id>/<D>`.
+
+**CLI:**
+
+```sh
+gh pr create --base main \
+    --title "submission(<team_id>): <D>" \
+    --body  "24h load forecast team <team_id>, target day <D>."
+```
+
+#### 6. Wait for validation
+
+**Web UI:** the PR page shows the *Checks* area at the bottom.
+After ~15 seconds you see either a green tick or a red cross. On
+red: go through the steps in @sec-validator-rot.
+
+**CLI:**
+
+```sh
+gh pr checks <pr-number> --watch
+```
+
+#### 7. Merge
+
+When validation is green:
+
+**Web UI:** button *Squash and merge* -> *Confirm squash and merge*
+-> *Delete branch* (cleans up the feature branch on the server).
+
+**CLI:**
+
+```sh
+gh pr merge <pr-number> --squash --delete-branch
+```
+
+#### 8. Sync local `main`
+
+```sh
+git switch main
+git pull origin main
+```
+
+The feature branch is deleted remotely; locally you can clean it up
+with `git branch -d submission/<team_id>/<D>`.
+
+::: {.callout-note title="What happens after the merge?"}
+The **daily scoring workflow** runs every day at 07:00 UTC. For
+every target day before its run it pulls the ENTSO-E ground truth,
+computes the MAE of every submitted forecast and appends the scores
+to `data/scores.parquet`. Then the **leaderboard workflow**
+rebuilds the HTML page and deploys it to GitHub Pages. You will
+therefore see your evaluation on the day *after* the target day.
+:::
+
+Per target day and team: **the latest merged valid submission
+counts**. If you submit at 17:00 and want to take a better shot at
+22:00, that is allowed --- until 23:59 CET on *D-1*. For the
+correction add the same path file again (Git sees it as a
+modification; the validator accepts it).
+
+### When the validator is red {#sec-validator-rot}
+
+The most common error lines from `validate_submission.py` and how to
+fix them:
+
+| Error message                                                        | What to do?                                                                                                  |
+|:---------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------|
+| `PR author 'X' not in github_handles for team 'T': [...]`            | Handle missing from `teams.yml`. Short email to the lecturer. After their commit on `main`: empty commit on your PR branch (`git commit --allow-empty -m "ci: retrigger" && git push`), so that the CI recomputes with the new `teams.yml`. |
+| `PR must change or add exactly one submission (found: N)`            | Branch contains junk changes (e.g. accidentally cached `_cache/` or a second `.csv`). `git restore --staged .`, then add only the right CSV, `git commit --amend` and `git push --force-with-lease`. |
+| `CSV: expected 24 rows, found N`                                     | Generator bug: forecast horizon does not match. Check target day (UTC!), regenerate CSV.                     |
+| `Target day in path and in file do not match`                        | The `YYYY-MM-DD` in the file name must match the `timestamp_utc` day in the CSV exactly.                     |
+| `Negative or NaN values in forecast_mw`                              | Pipeline passed an endpoint NaN through. Check the trim (`y.loc[:y.last_valid_index()]`) in the generator.   |
+
+For multiple errors: work through them in order, retrigger each time
+with an empty commit or force-push.
+
+## Baseline implementation {#sec-baseline-skript}
+
+The following script produces a *rule-conformant* submission. It is
+a direct application of the pipeline from chapters 02, 04, 06 and
+07, with two differences from the main book strand:
+
+1. **Live data window** instead of the frozen 2024 slice. We load
+   the last 30 days of ENTSO-E data at training time.
+2. **Forecast for *tomorrow*** instead of for a test slice from 2024.
+
+```{python}
+#| label: baseline-skript
+#| echo: true
+#| eval: false
+"""
+make_submission.py --- produces <repo-root>/submissions/<team>/<D>.csv.
+
+Usage (from the root directory of your challenge-leaderboard fork):
+    cd .../challenge-leaderboard
+    python .../make_submission.py --team team_lambda --target-date 2026-05-15
+
+Optionally explicit:
+    python .../make_submission.py --team ... --target-date ... \
+        --repo-root /path/to/challenge-leaderboard
+
+Prerequisites:
+- ENTSOE_API_KEY is set in the shell.
+- Directory `submissions/` exists under --repo-root.
+
+Minimal pipeline: a pure lag model (168 h ~ weekly persistence)
+without calendar/weather exogenous variables. More accurate and
+course-near is the full pipeline from chapters 06-08; for the first
+submission run this script is sufficient.
+"""
+import argparse
+import os
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pandas as pd
+
+from spotforecast2_safe import ForecasterRecursiveLGBM, LinearlyInterpolateTS
+from spotforecast2_safe.data.fetch_data import fetch_data, get_data_home
+from spotforecast2_safe.downloader.entsoe import download_new_data
+
+
+def make_submission(team: str, target_date: str, repo_root: Path) -> Path:
+    target = datetime.fromisoformat(target_date).replace(tzinfo=timezone.utc)
+    train_end = target - timedelta(hours=1)
+    train_start = train_end - timedelta(days=30)
+
+    api_key = os.environ["ENTSOE_API_KEY"]
+    download_new_data(
+        api_key=api_key,
+        country_code="DE",
+        start=train_start.strftime("%Y%m%d%H%M"),
+        end=train_end.strftime("%Y%m%d%H%M"),
+        force=True,
+    )
+
+    interim = get_data_home() / "interim" / "energy_load.csv"
+    df_raw = fetch_data(filename=str(interim))
+    df_raw.index = pd.to_datetime(df_raw.index, utc=True)
+
+    load_col = next(c for c in df_raw.columns if "Actual" in c and "Load" in c)
+    y = df_raw[load_col].astype(float).rename("load")
+    if y.index.inferred_freq != "h":
+        y = y.resample("h").mean()
+    y = y.loc[train_start:train_end]
+    # ENTSO-E publishes "Actual Load" with a few hours' delay.
+    # We cut off at the last actually present hour and let the
+    # forecaster bridge the gap to the end of the target day.
+    y = y.loc[:y.last_valid_index()]
+
+    # CR-3: handle gaps explicitly instead of silently interpolating
+    y = LinearlyInterpolateTS(on_missing="raise").fit_transform(y)
+    # Forecaster requires a DatetimeIndex with frequency set
+    y.index = pd.DatetimeIndex(y.index, freq="h")
+
+    model = ForecasterRecursiveLGBM(
+        iteration=0,
+        lags=168,
+        random_state=2026,  # CR-2: deterministic
+    )
+    model.fit(y)
+
+    target_hours = pd.date_range(target, periods=24, freq="h", tz="UTC")
+    horizon = int((target_hours[-1] - y.index[-1]) / pd.Timedelta(hours=1))
+    y_pred_full = model.forecaster.predict(steps=horizon)
+    y_pred = y_pred_full.iloc[-24:]
+
+    submission = pd.DataFrame({
+        "timestamp_utc": target_hours.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "forecast_mw": y_pred.values.round(2),
+    })
+
+    submissions_dir = repo_root / "submissions"
+    if not submissions_dir.is_dir():
+        raise SystemExit(
+            f"Directory '{submissions_dir}' not found. "
+            f"Call from the root directory of the challenge-leaderboard repo "
+            f"is expected, or specify --repo-root explicitly."
+        )
+
+    out = submissions_dir / team / f"{target_date}.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    submission.to_csv(out, index=False)
+    return out
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--team", required=True)
+    parser.add_argument("--target-date", required=True,
+                        help="YYYY-MM-DD (UTC date of forecast target)")
+    parser.add_argument("--repo-root", type=Path, default=Path.cwd(),
+                        help="root directory of the challenge-leaderboard "
+                             "repo (default: current working directory)")
+    args = parser.parse_args()
+    path = make_submission(args.team, args.target_date, args.repo_root.resolve())
+    print(f"Submission written: {path}")
+```
+
+::: {.callout-warning title="Live code not executed in the book"}
+This code block is marked with `#| eval: false`: it depends on a
+*live* ENTSO-E request and would violate the CR-2 invariant of the
+deterministic book build (see `CLAUDE.md`). Run it locally, but in
+the PR check in **only** the generated CSV.
+:::
+
+## Scoring methodology in detail
+
+For every valid submission of team *t* for target day *D* the scoring
+script computes:
+
+$$
+\text{MAE}_{t,D} \;=\; \frac{1}{24} \sum_{h=0}^{23}
+\bigl|\, y^{(\text{forecast})}_{t,D,h} - y^{(\text{actual})}_{D,h} \,\bigr|
+$$
+
+with $y^{(\text{actual})}_{D,h}$ being the ENTSO-E *final value* for
+hour *h*. Additionally, RMSE and MAPE are logged (for diagnostics,
+not for the ranking).
+
+The **public ranking** is the rolling 7-day mean:
+
+$$
+\overline{\text{MAE}}_t(D_{\text{today}}) \;=\;
+\frac{1}{7} \sum_{k=0}^{6} \text{MAE}_{t,\,D_{\text{today}} - k}
+$$
+
+(omitting days without a valid submission). Anyone who fails to
+reach four valid submissions in a given week does not appear in the
+main ranking that week but in a "quota" side ranking. The interim
+presentation on 2026-06-22 requires at least 30 valid submissions.
+
+## Evaluation architecture (GitHub Actions + Pages)
+
+```
+                 +---------------------------+
+   Team forks  ->|  challenge-leaderboard    |
+   and opens PR |  (public GitHub repo)     |
+                 +-------------+-------------+
+                               |
+              on: pull_request |
+                               v
+                 +---------------------------+
+                 |  validate-pr.yml          | -- schema check
+                 |                           |    deadline check
+                 |                           |    team-auth check
+                 +-------------+-------------+
+                               | green -> auto-merge
+                               v
+                 +---------------------------+
+   cron 0 7 * * *|  score-daily.yml          | -- ENTSO-E final-load pull
+                 |                           |    MAE per team
+                 |                           |    append data/scores.parquet
+                 +-------------+-------------+
+                               | workflow_run
+                               v
+                 +---------------------------+
+                 |  build-and-deploy.yml     | -- aggregate, HTML render
+                 |                           |    deploy to gh-pages
+                 +-------------+-------------+
+                               |
+                               v
+                 Leaderboard on GitHub Pages,
+                 public, readable without login.
+```
+
+Three properties are constitutive here:
+
+- **Auditability (Art. 12 AI Act)**: every submission, every
+  scoring result and every leaderboard state is a commit in the Git
+  history; nothing is overwritten.
+- **Determinism (CR-2)**: the scoring workflow pins its
+  dependencies in `uv.lock`, sets `PYTHONHASHSEED=0` and freezes
+  the ENTSO-E response as a snapshot in the same commit that
+  writes the score result.
+- **Fail-safe (CR-3)**: if a single value is missing in the
+  ENTSO-E pull, the validator (with
+  `LinearlyInterpolateTS(on_missing="raise")`) aborts and does
+  *not* publish a partial result; scoring is postponed by one day.
+
+Complete workflow snippets live in the `challenge-leaderboard` repo
+(path: `.github/workflows/`).
+
+## Leaderboard
+
+The publicly viewable page is at
+`https://bartzbeielstein.github.io/challenge-leaderboard/`. It
+contains two tables:
+
+1. **Main ranking**: teams sorted by rolling 7-day MAE, ascending.
+2. **Cum-ranking**: teams sorted by cumulative MAE since kickoff
+   (tie-break).
+
+Both tables are regenerated after every scoring run; the Sunday
+afternoon snapshot remains archived in `public/snapshots/` so that
+weekly winners remain traceable.
+
+## Calendar
+
+| Date         | Event                                                          |
+|:-------------|:---------------------------------------------------------------|
+| 2026-05-11   | Challenge kickoff (slot: "Background, challenge")              |
+| 2026-05-11   | First possible submission (target day 2026-05-12)              |
+| 2026-06-22   | 2nd interim presentation: at least 30 valid submissions        |
+| 2026-07-19   | Last scored submission (target day 2026-07-20)                  |
+| 2026-07-20   | 3rd final presentation: winners announcement                    |
+| 2026-07-27   | Written exam (challenge code defended in the oral part)        |
+
+## Exercises (with Claude) {.unnumbered}
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Beat the baseline.* Starting from the `make_submission.py`
+   script shown above, ask Claude for three concrete levers that
+   typically reduce the MAE (e.g. additional exogenous variables,
+   longer training window, different lag depth). For each lever
+   discuss whether it endangers CR-2 (determinism) --- e.g. weather
+   forecasts with non-deterministic updates.
+2. *Understand block-wise CV.* Have Claude explain why classical
+   *k-fold* cross-validation leads to over-optimistic numbers in
+   this competition and which function in
+   `spotforecast2_safe.model_selection` correctly implements the
+   rolling-origin scheme (see @sec-backtest).
+3. *Weekly-persistence sanity check.* Ask Claude to write a 10-line
+   variant of the baseline script that, without training, simply
+   submits $y_{D,h} = y_{D-7,h}$. Enter this as a "persistence
+   team" in parallel --- a team that cannot beat this baseline has
+   a methodological problem.
+4. *Recreate the validator locally.* Ask Claude to translate the
+   schema and deadline check implemented in
+   `challenge-leaderboard/scripts/validate_submission.py` into a
+   local pytest test. Why is it a CR-3 violation to rely only on
+   the server-side validator?
+:::
+
+## Appendix: maintaining `teams.yml` (for lecturers) {#sec-teams-yml-anhang .unnumbered}
+
+The team registry `teams.yml` in the leaderboard repo is the only
+place where permissions are checked: only people whose GitHub
+handle appears in `github_handles` may merge PRs for their team.
+
+### Fields
+
+| Field            | Required | Rules                                                                              |
+|:-----------------|:---------|:-----------------------------------------------------------------------------------|
+| `id`             | yes      | lowercase letters, digits and `_` --- appears in the path `submissions/<id>/...`   |
+| `display_name`   | yes      | free string --- appears in the public leaderboard                                  |
+| `github_handles` | yes      | list of GitHub logins **without** `@`, **case-insensitive** (validator lowercases) |
+
+### Concrete example: handle two registrations
+
+**Email 1** (10 May 2026, 14:02):
+
+> *Hello, we would like to register as "Team Lambda". Members:*
+> *Alice Mueller (GitHub: alice42), Bob Schmidt (bob99), Carol*
+> *Schulze (carol7). Best regards, ...*
+
+**Email 2** (10 May 2026, 19:18):
+
+> *Registration team "Omega-Forecaster" (Dora Weber, dora88; Eve*
+> *Klein, eve12).*
+
+**1. Open the file:**
+
+```sh
+cd .../challenge-leaderboard
+$EDITOR teams.yml
+```
+
+**2. Add the entries.** From `teams: []` you get:
+
+```yaml
+teams:
+  - id: team_lambda
+    display_name: "Team Lambda"
+    github_handles:
+      - alice42
+      - bob99
+      - carol7
+  - id: omega_forecaster
+    display_name: "Omega-Forecaster"
+    github_handles:
+      - dora88
+      - eve12
+```
+
+Notes on the second entry:
+
+- `id` must **not** contain a special character --- from
+  "Omega-Forecaster" comes the ID `omega_forecaster`.
+  `display_name` may keep the original Omega-.
+- The ID later appears under
+  `submissions/omega_forecaster/<D>.csv`, so communicate it to the
+  team.
+
+**3. Validate locally before committing:**
+
+```{python}
+#| label: teams-yml-validate
+#| echo: true
+#| eval: false
+import yaml
+
+d = yaml.safe_load(open("teams.yml"))
+ids = [t["id"] for t in d["teams"]]
+assert len(ids) == len(set(ids)), f"Duplicate IDs: {ids}"
+for t in d["teams"]:
+    assert t["id"].islower() and all(c.isalnum() or c == "_" for c in t["id"]), t["id"]
+    assert t["github_handles"], t["id"]
+print(f"OK: {len(ids)} teams: {ids}")
+```
+
+Expected: `OK: 2 teams: ['team_lambda', 'omega_forecaster']`.
+
+**4. Commit & push:**
+
+```sh
+git add teams.yml
+git commit -m "teams: registrations wave 1 (Lambda, Omega-Forecaster)"
+git push
+```
+
+The `build-and-deploy.yml` workflow listens to changes in
+`teams.yml` and re-renders the leaderboard automatically --- after
+that the `display_name` strings appear as headers in the ranking
+even when no scores yet exist.
+
+**5. Registration confirmation to the teams.** Include in the reply
+email:
+
+- Repository URL `https://github.com/bartzbeielstein/challenge-leaderboard`
+- **Team ID** (filename-safe, use exactly as is):
+  `team_lambda` or `omega_forecaster`
+- Submission path convention `submissions/<team-id>/<YYYY-MM-DD>.csv`
+- Note: only the named GitHub handles can merge PRs for the team.
+
+### Further registration waves
+
+Simply append further waves to the `teams` list --- the order does
+not matter, the leaderboard sorts by score. If a team member joins
+later, just add the handle to `github_handles` and push.
+
+### Common pitfalls
+
+- **`id` with a hyphen** like `team-lambda` -> the path regex in the
+  validator (`[a-z0-9_]+`) rejects it. Use only `_` as separator.
+- **GitHub handle with uppercase letters** like `Alice42` -> no
+  problem, the validator compares lowercased. Still customary to
+  write lowercase.
+- **Duplicate `id`** -> the validator itself does not check this;
+  the local quick check in step 3 does. Duplicate IDs would
+  overwrite submissions reciprocally.

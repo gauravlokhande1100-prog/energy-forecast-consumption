@@ -1,0 +1,195 @@
+---
+jupyter: python3
+---
+
+# Rolling-origin backtest {#sec-backtest}
+
+::: {.callout-note title="Learning objective"}
+You understand why a single train/test split does not yield a robust
+accuracy verdict, and you can set up a rolling-origin backtest with
+`TimeSeriesFold` that estimates the forecast quality over several
+weeks.
+:::
+
+## Why backtest at all?
+
+In the previous chapter we forecast the first 24 hours of the evaluation
+range and measured three accuracy metrics on it. What if those very 24
+hours are unusually good --- or unusually bad? A single measurement at a
+single point on the time axis is *not* a robust verdict on the model
+quality.
+
+A *rolling-origin backtest* shifts the forecast start point step by step
+through the entire evaluation period and runs a 24-hour forecast at each
+step. The result is a whole distribution of accuracy measurements: you
+see not only the mean but also the spread; not only the best- and
+worst-case but the typical range of variation.
+
+## AI Act link
+
+Art. 9 of the AI Act (*risk management*) demands a *testing* of the
+system before it is put into service. Art. 10(3) requires that
+validation datasets are "representative" --- a term that, without an
+empirical test, remains a mere claim. The backtest provides exactly that
+empirical test.
+
+## Code in action
+
+```{python}
+#| label: load-state-bt
+#| echo: true
+import pandas as pd
+import pickle
+from pathlib import Path
+
+shared = Path("_cache/shared")
+y_clean = pd.read_parquet(shared / "load_de_2024_clean.parquet")["load"]
+y_train = pd.read_parquet(shared / "y_train.parquet")["load"]
+exog    = pd.read_parquet(shared / "exog.parquet")
+
+# A parquet round-trip drops the `freq` attribute of the DatetimeIndices;
+# the forecaster needs it to construct forecast indices.
+y_clean.index = pd.DatetimeIndex(y_clean.index, freq="h")
+y_train.index = pd.DatetimeIndex(y_train.index, freq="h")
+exog.index    = pd.DatetimeIndex(exog.index, freq="h")
+
+with Path("_cache/forecaster.pkl").open("rb") as fh:
+    model = pickle.load(fh)
+```
+
+```{python}
+#| label: run-backtest
+#| echo: true
+from spotforecast2_safe.backtesting.validation import (
+    TimeSeriesFold, backtesting_forecaster
+)
+
+# We restrict the backtest to the range for which calendar and weather
+# features are available (training + evaluation range from chapter 05).
+# That way we avoid asking the forecaster for hours whose `exog` values
+# do not exist.
+y_bt = y_clean.loc[exog.index.min():exog.index.max()]
+
+cv = TimeSeriesFold(
+    steps=24,
+    initial_train_size=len(y_train),
+    refit=False,
+    fixed_train_size=False,
+    verbose=False,
+)
+
+metrics_df, predictions_df = backtesting_forecaster(
+    forecaster=model.forecaster,
+    y=y_bt,
+    cv=cv,
+    metric="mean_absolute_error",
+    exog=exog,
+    show_progress=False,
+    verbose=False,
+)
+print(f"Number of folds:    {len(metrics_df)}")
+print(f"Mean MAE:           {float(metrics_df.iloc[0, 0]):.1f} MW")
+print(f"Predictions total:  {len(predictions_df):,} h")
+print()
+print("First five predictions:")
+print(predictions_df.head().round(1).to_string())
+```
+
+::: {.callout-note title="`refit=False` and CR-2"}
+With `refit=False` every fold uses the same trained model --- the
+forecast in week 4 therefore relies on the model fitted on data up to
+the end of October, not on a weekly-updated model. This is a deliberate
+discipline: we want to measure how the model forecasts *in live
+operation between updates*. If we retrained before every fold, we would
+systematically over-estimate ourselves.
+:::
+
+## Visualisation: the folds on the time axis
+
+```{python}
+#| label: fig-folds
+#| fig-cap: "Visualisation of the rolling-origin folds. The training range (blue) ends at the orange separator line at the start of each fold. Each fold (orange-red) forecasts the following 24 hours. The ENTSO-E load in the background (grey) provides context."
+#| echo: true
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.patches as mpatches
+
+n_show = min(8, len(metrics_df))
+fold_starts = []
+for i in range(n_show):
+    start = predictions_df.index[i * 24]
+    end   = predictions_df.index[i * 24 + 23]
+    fold_starts.append((start, end))
+
+window_start = fold_starts[0][0] - pd.Timedelta(hours=24)
+window_end   = fold_starts[-1][1] + pd.Timedelta(hours=24)
+context = y_bt.loc[window_start:window_end]
+
+fig, ax = plt.subplots(figsize=(8.5, 3.5))
+ax.plot(context.index, context.values / 1000,
+        color="#999999", linewidth=0.6, label="ENTSO-E load")
+
+for start, end in fold_starts:
+    span = pd.date_range(start, end, freq="h")
+    ax.axvspan(start, end, color="#E07B00", alpha=0.18)
+    ax.plot([start, start], [ax.get_ylim()[0], ax.get_ylim()[1]],
+            color="#E07B00", linewidth=0.6)
+
+ax.set_ylabel("Load [GW]")
+ax.set_xlabel("Time")
+ax.grid(True, color="#E5E5E5", linewidth=0.5)
+ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%-d.%-m"))
+for s in ("top", "right"):
+    ax.spines[s].set_visible(False)
+
+fig.tight_layout()
+plt.show()
+```
+
+## Distribution of errors across folds
+
+```{python}
+#| label: fig-fold-distribution
+#| fig-cap: "Distribution of MAE values across all folds of the backtest, plus the median (dashed) and the maximum value (red line). A narrow distribution means that the model quality is consistent across the evaluation range."
+#| echo: true
+import numpy as np
+
+# MAE per fold
+mae_per_fold = []
+for i in range(len(metrics_df)):
+    fold_idx = predictions_df.index[i * 24 : (i + 1) * 24]
+    pred_vals = predictions_df.iloc[i * 24 : (i + 1) * 24, 0].values
+    actual = y_bt.loc[fold_idx].values
+    mae_per_fold.append(np.abs(pred_vals - actual).mean())
+mae_per_fold = np.array(mae_per_fold) / 1000   # in GW
+
+fig, ax = plt.subplots(figsize=(8.5, 3.0))
+ax.hist(mae_per_fold, bins=12, color="#1F4E79", alpha=0.85, edgecolor="white")
+ax.axvline(np.median(mae_per_fold), color="#E07B00", linestyle="--",
+           linewidth=1.2, label=f"Median = {np.median(mae_per_fold):.2f} GW")
+ax.axvline(mae_per_fold.max(), color="#B33A3A", linewidth=1.2,
+           label=f"Maximum = {mae_per_fold.max():.2f} GW")
+ax.set_xlabel("MAE per 24-h fold [GW]")
+ax.set_ylabel("Number of folds")
+ax.legend(loc="upper right", frameon=False)
+ax.grid(True, color="#E5E5E5", linewidth=0.5)
+for s in ("top", "right"):
+    ax.spines[s].set_visible(False)
+fig.tight_layout()
+plt.show()
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Change `refit`.* Have Claude explain what changes about the
+   evaluation when `refit=True` is set --- and how training cost and
+   accuracy trade off. In which practical situation is weekly re-training
+   worth it?
+2. *Adversarial fold.* Ask Claude to identify a fold in which the model
+   performs particularly poorly and to discuss which data constellation
+   might be responsible (holiday, weather event, load peak).
+3. *Robustness threshold.* Discuss with Claude how you would formulate an
+   audit threshold above which a fold is marked as "non-compliant" ---
+   and which actions should follow (model freeze, escalation to
+   dispatcher, fallback).
+:::

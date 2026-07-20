@@ -1,0 +1,161 @@
+---
+jupyter: python3
+---
+
+# Provenance and reproducibility {#sec-provenance}
+
+::: {.callout-note title="Learning objective"}
+You can derive, from a trained forecaster and its audit log, the minimum
+amount of provenance information required by Art. 11 (technical
+documentation) and Art. 12 (record-keeping) of the AI Act --- and you
+can explain how all four code rules together guarantee the
+reproducibility of a forecast across years.
+:::
+
+## What is this about?
+
+Imagine that in two years' time a supervisory authority asks about a
+load forecast our system produced on 28 November 2024 at 06:00 for the
+following day. Can we, today, reproduce that forecast exactly as it was
+generated back then? If yes, the system is *auditable*. If not, the
+authority is entitled to forbid further operation.
+
+Reproducibility presupposes that we have documented all inputs,
+hyperparameters and intermediate results completely enough for someone
+running the same code to arrive at the exact same forecast. This chapter
+is a retrospective: all four code rules and several AI Act articles
+come together here.
+
+## Which fields does `spotforecast2-safe` record automatically?
+
+```{python}
+#| label: load-and-introspect
+#| echo: true
+import json
+import pandas as pd
+import pickle
+from pathlib import Path
+
+shared = Path("_cache/shared")
+with Path("_cache/forecaster.pkl").open("rb") as fh:
+    model = pickle.load(fh)
+
+provenance = {
+    "model_name":            model.name,
+    "estimator":             type(model.forecaster.estimator).__name__,
+    "number_of_trees":       int(model.forecaster.estimator.n_estimators),
+    "learning_rate":         float(model.forecaster.estimator.learning_rate),
+    "lags":                  int(model.forecaster.lags.size),
+    "seed":                  int(model.random_state),
+    "training_index_from":   str(model.forecaster.training_range_[0]),
+    "training_index_to":     str(model.forecaster.training_range_[1]),
+    "calendar_country":      model.preprocessor.country_code,
+    "number_of_periods":     len(model.preprocessor.periods),
+    "exog_column_count":     int(len(model.forecaster.exog_names_in_ or [])),
+}
+print(json.dumps(provenance, indent=2, ensure_ascii=False))
+```
+
+## Data provenance from the audit log
+
+The log switched on in @sec-audit contains every data action: ENTSO-E
+download, weather fetch, gap handling, training, prediction. We extract
+the file names and timestamps:
+
+```{python}
+#| label: log-summary
+#| echo: true
+log_dir = Path("_cache/logs")
+log_files = sorted(log_dir.glob("*.log")) if log_dir.exists() else []
+if log_files:
+    latest = log_files[-1]
+    lines = latest.read_text().splitlines()
+    print(f"Log file: {latest.name}, {len(lines)} lines")
+    print()
+    print("First five entries:")
+    for line in lines[:5]:
+        print("  " + line)
+else:
+    print("No log files found.")
+```
+
+## Visualisation: the provenance diagram
+
+The following Mermaid diagram summarises the data and control flows of
+the entire pipeline. In this form it can be reused directly in a
+`MODEL_CARD.md`.
+
+```{mermaid}
+flowchart TD
+    A["ENTSO-E API<br/>(Country=DE, 2024)"] -->|download_new_data| B["raw CSVs"]
+    B -->|merge_build_manual| C["interim/energy_load.csv"]
+    O["Open-Meteo Archive API<br/>(50.11N, 8.68E)"] -->|WeatherService.get_dataframe| W["weather_de_2024.parquet"]
+    C --> D["LinearlyInterpolateTS<br/>(on_missing=raise)"]
+    D --> E["y_train + y_eval<br/>chronological split"]
+    W --> F["ExogBuilder<br/>(periods + holidays)"]
+    F --> G["exog.parquet"]
+    E --> H["ForecasterRecursiveLGBM<br/>(seed=2026, lags=168)"]
+    G --> H
+    H -->|fit| M["forecaster.pkl"]
+    M -->|predict| P["y_pred_24h.parquet"]
+    M -->|backtesting_forecaster| BT["metrics_df + predictions_df"]
+    H --> L["Audit log<br/>(_cache/logs/*.log)"]
+```
+
+## How all four code rules come together here
+
+| Code rule | Effect in this pipeline                                                     |
+|:---------:|:----------------------------------------------------------------------------|
+| CR-1      | Every function (`download_new_data`, `LinearlyInterpolateTS`, `ExogBuilder`, `WeatherService`, `ForecasterRecursiveLGBM`, `backtesting_forecaster`) is represented in the logging and protected by tests. |
+| CR-2      | Fixed date constants, fixed seed, `deterministic=True` in LightGBM, fixed `random_state` --- bit-exact reproducibility even after years. |
+| CR-3      | NaN behaviour in `LinearlyInterpolateTS` (`on_missing='raise'`) and in `WeatherService` (`fill_missing=False`) --- gaps are reported, not silently filled. |
+| CR-4      | Deny-list forbids `plotly`, `matplotlib`, `optuna`, `torch`, `tensorflow` as dependencies; LightGBM and scikit-learn are allowed because they are small and well maintained. |
+
+## AI Act link, compact
+
+| Obligation              | Article  | Fulfilled in the pipeline by                                |
+|:------------------------|:---------|:------------------------------------------------------------|
+| Risk management         | Art. 9   | Backtest in @sec-backtest, deterministic training, audit log |
+| Data governance         | Art. 10  | Provenance note from chapter 02, NaN discipline from @sec-missing, weather fail-safe |
+| Technical documentation | Art. 11  | Provenance diagram, JSON entry above, MODEL_CARD.md in the package |
+| Record-keeping          | Art. 12  | Audit log, persisted intermediate artefacts (`*.parquet`, `*.pkl`) |
+| Transparency            | Art. 13  | Feature-importance plot in @sec-train, recursion equation in @sec-forecast |
+| Accuracy/robustness     | Art. 15  | Four metrics in @sec-accuracy plus backtest distribution |
+
+## Persisting the provenance note
+
+```{python}
+#| label: persist-provenance
+#| echo: true
+import json
+out = Path("_cache/provenance.json")
+out.write_text(json.dumps(provenance, indent=2, ensure_ascii=False))
+print(f"Provenance note: {out}")
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Reproduction in two years.* Ask Claude to sketch a concise recovery
+   plan: an audit team wants to reproduce in 2027 the forecast from
+   28 November 2024 for 29 November 2024. Which five artefacts of this
+   pipeline are needed at minimum? Which code rules make this endeavour
+   possible at all?
+2. *Gap analysis.* Discuss with Claude which additional provenance
+   fields *beyond* the list printed here should appear in a real
+   `MODEL_CARD.md` (e.g. hash of the training data, versions of every
+   dependency, hardware description). Which standard expressly requires
+   these fields (AI Act, IEC 62443, ISO 25059)?
+3. *Audit script.* Have Claude write a small Python script that reads
+   the persisted `provenance.json` and automatically checks whether all
+   mandatory fields are populated. Which code rule is the prerequisite
+   for such an automated check to be meaningful at all?
+:::
+
+## Closing remark
+
+In ten chapters you have built a complete safety-critical
+load-forecasting pipeline: from live data acquisition through cyclic
+features, weather, deterministic training, prediction, accuracy
+measurement and backtest, all the way to a reproducible provenance
+note. If you were now asked in an audit how you comply with the AI
+Act, you can answer with *code* instead of reassurances --- and that
+is precisely the spirit in which `spotforecast2-safe` was developed.

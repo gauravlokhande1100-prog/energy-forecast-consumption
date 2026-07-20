@@ -1,0 +1,308 @@
+---
+jupyter: python3
+---
+
+# Annotate data gaps instead of inventing them {#sec-annotation}
+
+::: {.callout-note title="Learning objective"}
+You understand why a safety-critical library **annotates** broken rows
+instead of interpolating them, and you can assemble the three building
+blocks `mark_outliers`, `get_missing_weights` and `WeightFunction` into a
+preprocessing pipeline that complies with the AI Act.
+:::
+
+## Why not simply interpolate?
+
+Linear interpolation (see @sec-missing) fills gaps with *invented* values.
+For yesterday's weather forecast that is uncritical; in a high-risk
+application under Annex III of the AI Act --- such as load forecasting for
+a transmission system operator --- it leads to two structural problems:
+
+1. **Auditability disappears.** In retrospect an interpolated hour looks
+   to the auditor exactly like a real measurement. But Art. 12 of the AI
+   Act demands that *every* data-related action remains discoverable in
+   the audit log.
+2. **The model learns phantom data.** A forecaster that takes the
+   interpolated value as a training target optimises its loss against
+   invented values as well. The expected value of the learned function is
+   biased in favour of the imputer --- rather than in favour of reality.
+
+The `spotforecast2-safe` library therefore follows the *"annotate, don't
+invent"* pattern: broken rows are set to `NaN`, filled in via
+forward/backward fill only far enough that the lag operator does not
+crash, and assigned weight **0** in the training loss. The model *sees*
+the compromised rows, but they do not pull the gradient.
+
+## AI Act link
+
+| Requirement                                          | Article       | How implemented here                                            |
+|:-----------------------------------------------------|:--------------|:----------------------------------------------------------------|
+| Completeness, freedom from errors, representativeness | Art. 10(3)    | `mark_outliers` makes outliers visible instead of smoothing them. |
+| Record-keeping of every data action                   | Art. 12       | `verbose=True` and the logger output record both annotation and imputation. |
+| Accuracy & robustness                                 | Art. 15       | The training weight 0 keeps compromised rows out of the loss. |
+| Code rule CR-2 (determinism)                          | ---           | `random_state=1234` guarantees reproducible outlier sets. |
+| Code rule CR-3 (fail-safe)                            | ---           | A gap never leaves the pipeline silently. |
+
+## Loading data
+
+We work with the same ENTSO-E load series as every other chapter.
+Important: `get_missing_weights` expects a **DataFrame** (not a Series),
+because the function is multi-column-aware and checks NaN values across
+all columns simultaneously.
+
+```{python}
+#| label: load-df
+#| echo: true
+import numpy as np
+import pandas as pd
+from pathlib import Path
+
+shared = Path("_cache/shared")
+df = pd.read_parquet(shared / "load_de_2024.parquet")[["load"]].copy()
+print(f"{len(df):,} hours loaded, {int(df.isna().sum().sum())} NaN present.")
+print(df.head(3))
+```
+
+## Inject an artificial anomaly
+
+The real series contains no obvious spikes. To keep the example
+tangible, we insert one strikingly large outlier --- a single hour that
+reaches three times the largest real load. *Such* values are typical
+sensor defects in practice (transmission errors, wrong scaling,
+back-calculation bugs).
+
+```{python}
+#| label: inject-spike
+#| echo: true
+df_demo = df.copy()
+spike_pos = 200
+spike_ts = df_demo.index[spike_pos]
+df_demo.iloc[spike_pos, 0] = float(df["load"].max() * 3)
+
+print(f"Spike inserted at {spike_ts}:  {df_demo.iloc[spike_pos, 0]:,.0f} MW")
+print(df_demo.iloc[spike_pos-1:spike_pos+2])
+```
+
+## Step 1 --- Mark outliers
+
+`mark_outliers` runs an `IsolationForest` on each column and replaces
+detected anomalies with `NaN`. The parameter `contamination` is the
+*expected* outlier ratio --- keep it small, otherwise the algorithm
+treats regular load peaks as defects too.
+
+```{python}
+#| label: mark-outliers
+#| echo: true
+from spotforecast2_safe.preprocessing import mark_outliers
+
+df_marked, labels = mark_outliers(
+    df_demo.copy(),
+    contamination=0.005,
+    random_state=1234,
+    verbose=True,
+)
+
+n_marked = int(df_marked["load"].isna().sum())
+print(f"\nMarked rows: {n_marked} ({n_marked/len(df_marked):.2%})")
+print(f"The injected spike at {spike_ts}:  {df_marked.loc[spike_ts, 'load']!r}")
+```
+
+The constructed spike was detected --- the value is now `NaN`. The
+`IsolationForest` additionally finds about four dozen other
+inconspicuous-looking hours whose hourly profile deviates from the
+2024 pattern; in a production pipeline you would reconcile this
+suggestion list with domain expertise (dispatcher, grid operator). The
+list is part of the audit log.
+
+## Step 2 --- Fill gaps *and* weight them
+
+`get_missing_weights` does two things in a single call:
+
+1. **Imputation**: forward-fill, then backward-fill --- so that no
+   `NaN` remains in the series (a technical prerequisite for the
+   forecaster's lag operator).
+2. **Weighting**: for every originally compromised row *and* for the
+   following `window_size` hours, the weight is set to `0.0`. All other
+   rows receive weight `1.0`.
+
+The second point is the decisive step: because the recursive forecaster
+reads a **lag window** of size `window_size` at training time, every row
+*inside* that window after a gap is *also* contaminated --- it would be
+trained against the imputed value as a lag feature. Weight 0 excludes it
+consistently.
+
+```{python}
+#| label: weights
+#| echo: true
+from spotforecast2_safe.preprocessing import get_missing_weights
+
+df_filled, weights = get_missing_weights(
+    df_marked,
+    window_size=72,
+    verbose=True,
+)
+
+print(f"\nNaN after imputation:                {int(df_filled.isna().sum().sum())}")
+print(f"Rows with training weight 0:        {int((weights == 0).sum()):,}")
+print(f"Share of excluded rows:             {(weights == 0).mean():.2%}")
+print(f"Row identity preserved:             {len(df_filled) == len(df)}")
+```
+
+The series length is unchanged (`len(df_filled) == len(df)`). Every
+original hour still exists and is findable in the index. That is the
+central difference from interpolation: the gap is *declared*, not
+overwritten.
+
+## Step 3 --- `WeightFunction` as a picklable contract
+
+The forecaster accepts a **callable** for its `weight_func` parameter,
+not an array. Background: the lag matrix is `max(lags)` rows shorter
+than the original series; a positional handover would create
+off-by-N errors. `WeightFunction` resolves this index-based:
+
+```{python}
+#| label: wrap
+#| echo: true
+from spotforecast2_safe.preprocessing import WeightFunction
+
+weight_func = WeightFunction(weights)
+print(weight_func)
+
+# Call with a timestamp index -> numpy array
+sample = df_filled.index[:5]
+print(f"\nWeights for {sample[0]} ... {sample[-1]}:")
+print(weight_func(sample))
+```
+
+### Edge case: a window entirely in the danger zone
+
+If every row of a lag window carries weight 0, the weighted loss would
+collapse to 0/0. `WeightFunction` detects this and returns `None`; the
+forecaster interprets `None` as "uniform weighting", so the location
+remains operational.
+
+```{python}
+#| label: edge-case
+#| echo: true
+zero_idx = weights.index[weights == 0]
+window_in_gap = zero_idx[:3]
+print("Index in danger zone:", window_in_gap.tolist())
+print("Return value:", weight_func(window_in_gap))
+```
+
+### Picklability (CR-2)
+
+So that the entire forecaster --- including the weight function --- can
+later be reloaded deterministically, `weight_func` must be picklable.
+An ordinary closure would not be; a `WeightFunction` instance is:
+
+```{python}
+#| label: pickle
+#| echo: true
+import pickle
+
+raw = pickle.dumps(weight_func)
+weight_func_restored = pickle.loads(raw)
+
+original  = weight_func(df_filled.index[:5])
+restored  = weight_func_restored(df_filled.index[:5])
+print("Original :", original)
+print("Restored :", restored)
+print("Identical:", bool(np.array_equal(original, restored)))
+```
+
+## Visualisation: the danger zone made visible
+
+```{python}
+#| label: fig-zones
+#| fig-cap: "Annotate instead of impute, illustrated on hours 195-290 (around the injected spike). Top: the series after `mark_outliers` --- the spike is visible as a NaN gap (red marker). Middle: the same series after `get_missing_weights` (ffill+bfill). Bottom: the binary training weight --- the entire lag-window range after the gap is excluded from the loss with weight 0 (grey area)."
+#| echo: true
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
+view = slice(spike_pos - 5, spike_pos + 90)
+idx_view = df.index[view]
+
+fig, (ax_top, ax_mid, ax_bot) = plt.subplots(
+    3, 1, figsize=(8.0, 6.5), sharex=True
+)
+
+# (1) after mark_outliers: spike is NaN
+ax_top.plot(idx_view, df_marked["load"].iloc[view].values / 1000,
+            "o-", color="#2E5C8A", linewidth=1.0, markersize=3)
+ax_top.axvline(spike_ts, color="#B33A3A", linewidth=1.2,
+               linestyle="--", label="annotated anomaly")
+ax_top.set_ylabel("Load [GW]")
+ax_top.set_title("after `mark_outliers`: spike -> NaN")
+ax_top.legend(loc="upper right", fontsize=8)
+ax_top.grid(True, color="#E5E5E5", linewidth=0.5)
+
+# (2) after get_missing_weights: ffill+bfill closes the gap
+ax_mid.plot(idx_view, df_filled["load"].iloc[view].values / 1000,
+            "o-", color="#2E7D55", linewidth=1.0, markersize=3)
+ax_mid.set_ylabel("Load [GW]")
+ax_mid.set_title("after `get_missing_weights`: ffill+bfill (row identity preserved)")
+ax_mid.grid(True, color="#E5E5E5", linewidth=0.5)
+
+# (3) training weights
+w_view = weights.iloc[view].values
+ax_bot.fill_between(idx_view, 0, 1, where=(w_view == 0),
+                    step="post", alpha=0.35, color="#888888",
+                    label="training weight 0 (danger zone)")
+ax_bot.plot(idx_view, w_view, drawstyle="steps-post",
+            color="#1A1A1A", linewidth=1.2)
+ax_bot.set_ylabel("Weight")
+ax_bot.set_ylim(-0.1, 1.2)
+ax_bot.set_title(f"Training weighting (window_size=72)")
+ax_bot.legend(loc="lower right", fontsize=8)
+ax_bot.grid(True, color="#E5E5E5", linewidth=0.5)
+
+ax_bot.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+ax_bot.xaxis.set_major_formatter(mdates.DateFormatter("%-d.%-m"))
+
+for ax in (ax_top, ax_mid, ax_bot):
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
+
+fig.tight_layout()
+plt.show()
+```
+
+The grey area illustrates what `window_size=72` means in practice: after
+each annotated anomaly, another 72 hours are excluded from training
+because the lag operator would read them as a feature vector. Larger
+gaps widen the zone accordingly.
+
+## Persisting for follow-up chapters
+
+The annotation pipeline produces *two* artefacts, both deterministically
+reproducible: the imputed series and the corresponding weight series.
+Both are written into the cache so that chapter 07 (forecaster training)
+can read them without re-running the annotation.
+
+```{python}
+#| label: persist
+#| echo: true
+df_filled.to_parquet(shared / "load_de_2024_marked.parquet")
+weights.to_frame("weight").to_parquet(shared / "load_de_2024_weights.parquet")
+print("Annotated series + weight series persisted.")
+```
+
+::: {.callout-tip title="Exercises (with Claude)"}
+1. *Annotate vs. interpolate on the same spike.* Ask Claude to treat the
+   spike injected here with
+   `LinearlyInterpolateTS(on_missing="ffill_bfill")` instead and compare
+   the resulting histogram of the `load` column with the annotated
+   result. Which strategy shifts the mean less? Which one stays
+   structurally closer to Art. 10 of the AI Act?
+2. *Sensitivity of `window_size`.* Have Claude produce a table for
+   `window_size in {24, 48, 72, 168}` showing the share of rows with
+   weight 0. At which window size does the danger zone become usefully
+   large in practice, and when is it too large?
+3. *Test the invariant.* Ask Claude for a `pytest` test that, after
+   `mark_outliers` + `get_missing_weights`, checks *two* properties
+   simultaneously: (a) the series contains no more `NaN` and (b) every
+   originally annotated row has weight 0 and at least one of its
+   `window_size` follow-up rows does as well. Why is this a *contractual
+   property* and not an implementation detail?
+:::

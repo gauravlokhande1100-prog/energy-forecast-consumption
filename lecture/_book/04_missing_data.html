@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>4&nbsp; Handle data gaps explicitly – Safety-Critical Time-Series Forecasting with spotforecast2-safe</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./05_train_test_split.html" rel="next">
+<link href="./03_data_annotation.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-5ccb035bea26c1e21f80f44cf7c27909.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./04_missing_data.html"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Handle data gaps explicitly</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Safety-Critical Time-Series Forecasting with spotforecast2-safe</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01_audit_log.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Switch on the audit log</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02_entsoe_data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Loading live data from ENTSO-E</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_data_annotation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Annotate data gaps instead of inventing them</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04_missing_data.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Handle data gaps explicitly</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05_train_test_split.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Separating training and evaluation range</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06_calendar_and_weather.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Calendar features and real weather data</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07_forecaster_training.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Instantiate and train the forecaster</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08_forecast.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Produce a 24-hour forecast</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./09_accuracy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">Measuring accuracy: MAE, MSE, RMSE, MAPE</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10_backtest.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Rolling-origin backtest</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11_provenance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Provenance and reproducibility</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./12_challenge.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">Challenge: live load forecasting</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./13_live_submission.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Live submission to the ddmo-sose-26 challenge</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./14_team_4_submission.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">Team 4 live submission — advanced setup</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./15_entsoe.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">ENTSO-E day-ahead baseline submission</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./references.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">References</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#why-are-data-gaps-an-ai-act-topic" id="toc-why-are-data-gaps-an-ai-act-topic" class="nav-link active" data-scroll-target="#why-are-data-gaps-an-ai-act-topic"><span class="header-section-number">4.1</span> Why are data gaps an AI Act topic?</a></li>
+  <li><a href="#the-three-modes-of-linearlyinterpolatets" id="toc-the-three-modes-of-linearlyinterpolatets" class="nav-link" data-scroll-target="#the-three-modes-of-linearlyinterpolatets"><span class="header-section-number">4.2</span> The three modes of <code>LinearlyInterpolateTS</code></a></li>
+  <li><a href="#code-in-action-the-default-is-raise" id="toc-code-in-action-the-default-is-raise" class="nav-link" data-scroll-target="#code-in-action-the-default-is-raise"><span class="header-section-number">4.3</span> Code in action: the default is <code>raise</code></a></li>
+  <li><a href="#endpoint-gaps-here-cr-3-shows-its-effect" id="toc-endpoint-gaps-here-cr-3-shows-its-effect" class="nav-link" data-scroll-target="#endpoint-gaps-here-cr-3-shows-its-effect"><span class="header-section-number">4.4</span> Endpoint gaps: here CR-3 shows its effect</a></li>
+  <li><a href="#ffill_bfill-as-a-deliberate-opt-in" id="toc-ffill_bfill-as-a-deliberate-opt-in" class="nav-link" data-scroll-target="#ffill_bfill-as-a-deliberate-opt-in"><span class="header-section-number">4.5</span> <code>ffill_bfill</code> as a deliberate opt-in</a></li>
+  <li><a href="#passthrough-responsibility-passed-to-the-caller" id="toc-passthrough-responsibility-passed-to-the-caller" class="nav-link" data-scroll-target="#passthrough-responsibility-passed-to-the-caller"><span class="header-section-number">4.6</span> <code>passthrough</code>: responsibility passed to the caller</a></li>
+  <li><a href="#visualisation-beforeafter-picture-of-gap-handling" id="toc-visualisation-beforeafter-picture-of-gap-handling" class="nav-link" data-scroll-target="#visualisation-beforeafter-picture-of-gap-handling"><span class="header-section-number">4.7</span> Visualisation: before/after picture of gap handling</a></li>
+  <li><a href="#which-strategy-when-a-comparison-at-a-glance" id="toc-which-strategy-when-a-comparison-at-a-glance" class="nav-link" data-scroll-target="#which-strategy-when-a-comparison-at-a-glance"><span class="header-section-number">4.8</span> Which strategy when? — a comparison at a glance</a></li>
+  <li><a href="#persisting-for-follow-up-chapters" id="toc-persisting-for-follow-up-chapters" class="nav-link" data-scroll-target="#persisting-for-follow-up-chapters"><span class="header-section-number">4.9</span> Persisting for follow-up chapters</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span id="sec-missing" class="quarto-section-identifier"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Handle data gaps explicitly</span></span></h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-default callout-note callout-titled" title="Learning objective">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Learning objective
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You understand why a safety-critical library <em>by default</em> raises an exception on missing values instead of silently interpolating, and you can correctly apply the three modes <code>raise</code>, <code>ffill_bfill</code>, <code>passthrough</code> of the class <code>LinearlyInterpolateTS</code>.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-important callout-titled" title="Preferred strategy: annotation">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Preferred strategy: annotation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In safety-critical pipelines the <strong>annotation</strong> strategy from <a href="03_data_annotation.html" class="quarto-xref"><span>Chapter 3</span></a> (<code>mark_outliers</code> + <code>get_missing_weights</code> + <code>WeightFunction</code>) is the preferred one, because it does not replace gaps with invented values — broken rows are consistently excluded from the loss with weight 0. The linear interpolation shown here remains relevant for three situations: (1) migration from legacy notebooks, (2) as a follow-up step after a deliberately <em>non</em>-imputing imputer, and (3) when the downstream processing demands a NaN-free series without an explicit weight series.</p>
+</div>
+</div>
+<section id="why-are-data-gaps-an-ai-act-topic" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="why-are-data-gaps-an-ai-act-topic"><span class="header-section-number">4.1</span> Why are data gaps an AI Act topic?</h2>
+<p>Real sensor data contain gaps. A weather station fails for an hour, an electricity meter is rebooted, a data export drops an empty field. In a pure research notebook this is harmless. In a high-risk application under Annex III of the AI Act — such as the electric load forecast that a transmission system operator uses for dispatch — an <em>unnoticed</em> gap is dangerous. It produces a forecast that is returned with the same apparent confidence as a forecast without a gap; the auditor will never notice afterwards.</p>
+<p>Code rule <strong>CR-3</strong> (fail-safe processing) therefore requires: invalid inputs <em>explicitly</em> raise an exception instead of being silently imputed. The AI Act underpins this discipline in Art. 10(3) (representativeness, error-freedom, completeness) and Art. 15 (accuracy, robustness, cybersecurity).</p>
+<p><code>pandas</code>, <code>scikit-learn</code>, <code>skforecast</code>, <code>Darts</code>, <code>statsmodels</code> — most tools in the Python ecosystem follow the <em>“silently keep computing”</em> pattern. <code>spotforecast2-safe</code> inverts this default.</p>
+</section>
+<section id="the-three-modes-of-linearlyinterpolatets" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="the-three-modes-of-linearlyinterpolatets"><span class="header-section-number">4.2</span> The three modes of <code>LinearlyInterpolateTS</code></h2>
+<p>Since the major version with the contract switch <code>on_missing</code>, <code>LinearlyInterpolateTS</code> makes the treatment of remaining NaN values explicit. The class interpolates <em>inside</em> the series linearly (<code>limit_area="inside"</code>), so middle gaps are cleanly closed, while endpoint gaps remain and are handled further according to the mode:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 59%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Mode</th>
+<th style="text-align: left;">Behaviour</th>
+<th style="text-align: left;">Who uses this?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><code>"raise"</code> (default)</td>
+<td style="text-align: left;">Raises <code>ValueError</code> with a preview of the first gaps as soon as any NaN values remain after interpolation.</td>
+<td style="text-align: left;">Safety-critical pipeline; declares CR-3 actively.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;"><code>"ffill_bfill"</code></td>
+<td style="text-align: left;">Fills the remaining endpoint gaps by forward/backward fill.</td>
+<td style="text-align: left;">Migration from legacy notebooks; internally also part of the forecaster’s training contract.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;"><code>"passthrough"</code></td>
+<td style="text-align: left;">Passes NaN through unchanged; the next step takes responsibility.</td>
+<td style="text-align: left;">When a downstream imputer (e.g.&nbsp;<code>WeightedAverageImputation</code>) handles the gaps deliberately.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="code-in-action-the-default-is-raise" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="code-in-action-the-default-is-raise"><span class="header-section-number">4.3</span> Code in action: the default is <code>raise</code></h2>
+<div id="load-y" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>shared <span class="op">=</span> Path(<span class="st">"_cache/shared"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> pd.read_parquet(shared <span class="op">/</span> <span class="st">"load_de_2024.parquet"</span>)[<span class="st">"load"</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(y)<span class="sc">:,}</span><span class="ss"> hours loaded, </span><span class="sc">{</span><span class="bu">int</span>(y.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss"> NaN."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>8,783 hours loaded, 0 NaN.</code></pre>
+</div>
+</div>
+<p>We construct an artificial gap in the middle of the series to see the mechanism at work:</p>
+<div id="insert-gap" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>y_with_gap <span class="op">=</span> y.copy()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>y_with_gap.iloc[<span class="dv">120</span>:<span class="dv">123</span>] <span class="op">=</span> np.nan        <span class="co"># three NaNs in a row</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Artificial NaNs: </span><span class="sc">{</span><span class="bu">int</span>(y_with_gap.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Example:"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_with_gap.iloc[<span class="dv">118</span>:<span class="dv">126</span>].to_string())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Artificial NaNs: 3
+Example:
+Time (UTC)
+2024-01-05 22:00:00+00:00    50415.8475
+2024-01-05 23:00:00+00:00    47558.1450
+2024-01-06 00:00:00+00:00           NaN
+2024-01-06 01:00:00+00:00           NaN
+2024-01-06 02:00:00+00:00           NaN
+2024-01-06 03:00:00+00:00    44314.0025
+2024-01-06 04:00:00+00:00    44637.6075
+2024-01-06 05:00:00+00:00    45244.7525</code></pre>
+</div>
+</div>
+<div id="cr3-raise" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spotforecast2_safe <span class="im">import</span> LinearlyInterpolateTS</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># `on_missing` is not specified -&gt; default 'raise'</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>y_clean <span class="op">=</span> LinearlyInterpolateTS().fit_transform(y_with_gap)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NaN after interpolation:  </span><span class="sc">{</span><span class="bu">int</span>(y_clean.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_clean.iloc[<span class="dv">118</span>:<span class="dv">126</span>].to_string())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NaN after interpolation:  0
+Time (UTC)
+2024-01-05 22:00:00+00:00    50415.847500
+2024-01-05 23:00:00+00:00    47558.145000
+2024-01-06 00:00:00+00:00    46747.109375
+2024-01-06 01:00:00+00:00    45936.073750
+2024-01-06 02:00:00+00:00    45125.038125
+2024-01-06 03:00:00+00:00    44314.002500
+2024-01-06 04:00:00+00:00    44637.607500
+2024-01-06 05:00:00+00:00    45244.752500</code></pre>
+</div>
+</div>
+<p>The middle gap was cleanly closed because values on both sides were available. The default mode <code>raise</code> only stops <em>if</em> NaN values remain after the interpolation — typically at the start or end of the series.</p>
+</section>
+<section id="endpoint-gaps-here-cr-3-shows-its-effect" class="level2" data-number="4.4">
+<h2 data-number="4.4" class="anchored" data-anchor-id="endpoint-gaps-here-cr-3-shows-its-effect"><span class="header-section-number">4.4</span> Endpoint gaps: here CR-3 shows its effect</h2>
+<div id="cr3-edge" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>y_edge <span class="op">=</span> y.copy()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>y_edge.iloc[<span class="dv">0</span>:<span class="dv">2</span>] <span class="op">=</span> np.nan        <span class="co"># the first two hours are missing</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    LinearlyInterpolateTS(on_missing<span class="op">=</span><span class="st">"raise"</span>).fit_transform(y_edge)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">ValueError</span> <span class="im">as</span> exc:</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Expected fail-safe abort:"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="bu">str</span>(exc))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Expected fail-safe abort:
+2 missing value(s) remain after linear interpolation. First gaps: [2024-01-01 00:00:00+00:00, 2024-01-01 01:00:00+00:00]. Pass on_missing='ffill_bfill' to opt into endpoint forward/backward fill or on_missing='passthrough' to return the interpolated series with residual NaN.</code></pre>
+</div>
+</div>
+<p>The error message contains a preview of the first gaps — that is all a dispatcher or auditor needs to locate the gap precisely. Exactly this visibility is what Art. 12 of the AI Act (record-keeping) demands: nothing must fall under the table.</p>
+</section>
+<section id="ffill_bfill-as-a-deliberate-opt-in" class="level2" data-number="4.5">
+<h2 data-number="4.5" class="anchored" data-anchor-id="ffill_bfill-as-a-deliberate-opt-in"><span class="header-section-number">4.5</span> <code>ffill_bfill</code> as a deliberate opt-in</h2>
+<p>If you want to tolerate endpoint gaps deliberately (e.g.&nbsp;at the start of a migration), you must declare this explicitly:</p>
+<div id="cr3-ffill" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>y_filled <span class="op">=</span> LinearlyInterpolateTS(on_missing<span class="op">=</span><span class="st">"ffill_bfill"</span>).fit_transform(y_edge)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NaN after 'ffill_bfill':   </span><span class="sc">{</span><span class="bu">int</span>(y_filled.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"First five hours:"</span>, y_filled.iloc[:<span class="dv">5</span>].<span class="bu">round</span>(<span class="dv">2</span>).tolist())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NaN after 'ffill_bfill':   0
+First five hours: [37123.23, 37123.23, 37123.23, 36753.52, 37051.4]</code></pre>
+</div>
+</div>
+<p>Internally <code>ForecasterRecursiveModel</code> uses exactly this configuration in eight places — not out of carelessness, but to satisfy the training invariant “no NaN in the lag window at training time” even when the caller passes the series without pre-processing. The contract is made visible at the call site; that is the difference from silent imputation.</p>
+</section>
+<section id="passthrough-responsibility-passed-to-the-caller" class="level2" data-number="4.6">
+<h2 data-number="4.6" class="anchored" data-anchor-id="passthrough-responsibility-passed-to-the-caller"><span class="header-section-number">4.6</span> <code>passthrough</code>: responsibility passed to the caller</h2>
+<div id="cr3-passthrough" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>y_pt <span class="op">=</span> LinearlyInterpolateTS(on_missing<span class="op">=</span><span class="st">"passthrough"</span>).fit_transform(y_edge)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NaN after 'passthrough':  </span><span class="sc">{</span><span class="bu">int</span>(y_pt.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NaN after 'passthrough':  2</code></pre>
+</div>
+</div>
+<p>Useful, for example, when a downstream <code>WeightedAverageImputation</code> step fills the gaps deliberately. The <code>WARNING</code> emitted by that imputer is shown so that the caller sees in the audit log that imputation has happened.</p>
+</section>
+<section id="visualisation-beforeafter-picture-of-gap-handling" class="level2" data-number="4.7">
+<h2 data-number="4.7" class="anchored" data-anchor-id="visualisation-beforeafter-picture-of-gap-handling"><span class="header-section-number">4.7</span> Visualisation: before/after picture of gap handling</h2>
+<div id="cell-fig-gap-fill" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.dates <span class="im">as</span> mdates</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>window <span class="op">=</span> <span class="bu">slice</span>(<span class="dv">115</span>, <span class="dv">130</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>fig, (ax_top, ax_bot) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="fl">8.0</span>, <span class="fl">4.5</span>), sharex<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>ax_top.plot(y_with_gap.iloc[window].index, y_with_gap.iloc[window].values <span class="op">/</span> <span class="dv">1000</span>,</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"o-"</span>, color<span class="op">=</span><span class="st">"#B33A3A"</span>, linewidth<span class="op">=</span><span class="fl">1.0</span>, markersize<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>ax_top.set_ylabel(<span class="st">"Load [GW]"</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>ax_top.set_title(<span class="st">"before interpolation: three NaN"</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>ax_top.grid(<span class="va">True</span>, color<span class="op">=</span><span class="st">"#E5E5E5"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>ax_bot.plot(y_clean.iloc[window].index, y_clean.iloc[window].values <span class="op">/</span> <span class="dv">1000</span>,</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">"o-"</span>, color<span class="op">=</span><span class="st">"#2E7D55"</span>, linewidth<span class="op">=</span><span class="fl">1.0</span>, markersize<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>ax_bot.set_ylabel(<span class="st">"Load [GW]"</span>)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>ax_bot.set_title(<span class="st">"after `LinearlyInterpolateTS()` (default `on_missing='raise'`)"</span>)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>ax_bot.grid(<span class="va">True</span>, color<span class="op">=</span><span class="st">"#E5E5E5"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>ax_bot.xaxis.set_major_locator(mdates.HourLocator(byhour<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">12</span>]))</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>ax_bot.xaxis.set_major_formatter(mdates.DateFormatter(<span class="st">"</span><span class="sc">%-d</span><span class="st">.%-m %H:%M"</span>))</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax <span class="kw">in</span> (ax_top, ax_bot):</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> s <span class="kw">in</span> (<span class="st">"top"</span>, <span class="st">"right"</span>):</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>        ax.spines[s].set_visible(<span class="va">False</span>)</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="fig-gap-fill" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-gap-fill-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="04_missing_data_files/figure-html/fig-gap-fill-output-1.png" width="759" height="422" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-gap-fill-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4.1: Demonstration of the <code>LinearlyInterpolateTS</code> treatment. Top: an artificially injected gap (three consecutive NaN values) in January 2024. Bottom: the same series after the default call with <code>on_missing='raise'</code> — the three NaNs are filled in by linear interpolation of the neighbouring values; because no endpoint gaps remain, no error is raised.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="which-strategy-when-a-comparison-at-a-glance" class="level2" data-number="4.8">
+<h2 data-number="4.8" class="anchored" data-anchor-id="which-strategy-when-a-comparison-at-a-glance"><span class="header-section-number">4.8</span> Which strategy when? — a comparison at a glance</h2>
+<p>The three <code>LinearlyInterpolateTS</code> modes and the annotation pipeline from <a href="03_data_annotation.html" class="quarto-xref"><span>Chapter 3</span></a> are not mutually exclusive — they target different points in the lifecycle of the data. Before mapping the application situations, a direct comparison of the two strategies’ <em>structural properties</em> is worthwhile:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 34%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Property</th>
+<th style="text-align: left;"><code>LinearlyInterpolateTS</code></th>
+<th style="text-align: left;"><code>mark_outliers</code> + <code>get_missing_weights</code> (<a href="03_data_annotation.html" class="quarto-xref"><span>Chapter 3</span></a>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Series length after pre-processing</td>
+<td style="text-align: left;">unchanged</td>
+<td style="text-align: left;">unchanged</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">NaN guarantee after the step</td>
+<td style="text-align: left;">only in <code>ffill_bfill</code> mode / after interpolation</td>
+<td style="text-align: left;">yes, guaranteed after <code>get_missing_weights</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Training target contains invented values</td>
+<td style="text-align: left;">yes (line between neighbours)</td>
+<td style="text-align: left;">no (real values; broken values are ffill placeholders with weight 0)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Auditability of the action</td>
+<td style="text-align: left;">indirect (<code>raise</code> error message)</td>
+<td style="text-align: left;">direct (<code>verbose=True</code> lists indices; <code>weights</code> is serialisable)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Model bias due to imputation</td>
+<td style="text-align: left;">possible</td>
+<td style="text-align: left;">structurally excluded (weight 0)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Recommendation for high-risk applications</td>
+<td style="text-align: left;">only as a migration path or with a downstream imputer</td>
+<td style="text-align: left;"><strong>standard strategy</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The following table translates these structural differences into concrete application situations:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 52%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Situation</th>
+<th style="text-align: left;">Recommended strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Production high-risk pipeline (Annex III)</td>
+<td style="text-align: left;"><strong>Annotation</strong> (<a href="03_data_annotation.html" class="quarto-xref"><span>Chapter 3</span></a>); interpolation only as a downstream special step</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Middle gaps of individual hours, no systematic outlier search needed</td>
+<td style="text-align: left;"><code>LinearlyInterpolateTS(on_missing="raise")</code> as a CR-3 switch</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Migration from legacy notebooks without a <code>weight_func</code> path</td>
+<td style="text-align: left;"><code>LinearlyInterpolateTS(on_missing="ffill_bfill")</code> as a bridge</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Own downstream imputer</td>
+<td style="text-align: left;"><code>LinearlyInterpolateTS(on_missing="passthrough")</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Audit requires an explicit, picklable weight series</td>
+<td style="text-align: left;"><strong>Annotation</strong> (<a href="03_data_annotation.html" class="quarto-xref"><span>Chapter 3</span></a>); weights are part of the model artefact</td>
+</tr>
+</tbody>
+</table>
+<p>If in doubt, start with the annotation from <a href="03_data_annotation.html" class="quarto-xref"><span>Chapter 3</span></a> and only fall back to <code>LinearlyInterpolateTS</code> when there is a concrete argument against the weight series.</p>
+</section>
+<section id="persisting-for-follow-up-chapters" class="level2" data-number="4.9">
+<h2 data-number="4.9" class="anchored" data-anchor-id="persisting-for-follow-up-chapters"><span class="header-section-number">4.9</span> Persisting for follow-up chapters</h2>
+<p>We take the clean series as the starting point for all the following steps:</p>
+<div id="persist-clean" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>y_clean.to_frame(<span class="st">"load"</span>).to_parquet(shared <span class="op">/</span> <span class="st">"load_de_2024_clean.parquet"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Cleaned series persisted."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Cleaned series persisted.</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled" title="Exercises (with Claude)">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Exercises (with Claude)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><em>Three modes on the same example.</em> Ask Claude to write a small comparison table showing, for the three modes <code>raise</code>, <code>ffill_bfill</code>, <code>passthrough</code> on a series with <em>both</em> a middle and an endpoint gap, what the result looks like in each case. Which mode is directly compatible with Art. 10 of the AI Act?</li>
+<li><em>Comparison with pandas.</em> Have Claude compare <code>pandas.Series.interpolate()</code> directly with <code>LinearlyInterpolateTS(on_missing='raise')</code>. On an example with gaps at the edge: what happens in each variant? Which default is more suitable for a safety-critical pipeline?</li>
+<li><em>Test the contract.</em> Ask Claude how you would write a <em>test</em> that, in a CI pipeline, ensures that <code>LinearlyInterpolateTS()</code> (without an explicit argument) preserves the default <code>on_missing='raise'</code>. Argue why this property must be tested as a <em>contract</em> — and not just stated in the documentation.</li>
+</ol>
+</div>
+</div>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./03_data_annotation.html" class="pagination-link" aria-label="Annotate data gaps instead of inventing them">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Annotate data gaps instead of inventing them</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./05_train_test_split.html" class="pagination-link" aria-label="Separating training and evaluation range">
+        <span class="nav-page-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Separating training and evaluation range</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu"># Handle data gaps explicitly {#sec-missing}</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>::: {.callout-note title="Learning objective"}</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>You understand why a safety-critical library *by default* raises an exception</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>on missing values instead of silently interpolating, and you can correctly</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>apply the three modes <span class="in">`raise`</span>, <span class="in">`ffill_bfill`</span>, <span class="in">`passthrough`</span> of the class</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="in">`LinearlyInterpolateTS`</span>.</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>::: {.callout-important title="Preferred strategy: annotation"}</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>In safety-critical pipelines the **annotation** strategy from @sec-annotation</span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>(<span class="in">`mark_outliers`</span> + <span class="in">`get_missing_weights`</span> + <span class="in">`WeightFunction`</span>) is the</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>preferred one, because it does not replace gaps with invented values ---</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>broken rows are consistently excluded from the loss with weight 0. The</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>linear interpolation shown here remains relevant for three situations:</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>(1) migration from legacy notebooks, (2) as a follow-up step after a</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>deliberately *non*-imputing imputer, and (3) when the downstream</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>processing demands a NaN-free series without an explicit weight series.</span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="fu">## Why are data gaps an AI Act topic?</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>Real sensor data contain gaps. A weather station fails for an hour, an</span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>electricity meter is rebooted, a data export drops an empty field. In a pure</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>research notebook this is harmless. In a high-risk application under Annex III</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>of the AI Act --- such as the electric load forecast that a transmission system</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>operator uses for dispatch --- an *unnoticed* gap is dangerous. It produces a</span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>forecast that is returned with the same apparent confidence as a forecast</span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>without a gap; the auditor will never notice afterwards.</span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>Code rule **CR-3** (fail-safe processing) therefore requires: invalid inputs</span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>*explicitly* raise an exception instead of being silently imputed. The AI Act</span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>underpins this discipline in Art. 10(3) (representativeness, error-freedom,</span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>completeness) and Art. 15 (accuracy, robustness, cybersecurity).</span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a><span class="in">`pandas`</span>, <span class="in">`scikit-learn`</span>, <span class="in">`skforecast`</span>, <span class="in">`Darts`</span>, <span class="in">`statsmodels`</span> --- most tools</span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a>in the Python ecosystem follow the *"silently keep computing"* pattern.</span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a><span class="in">`spotforecast2-safe`</span> inverts this default.</span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a><span class="fu">## The three modes of `LinearlyInterpolateTS`</span></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>Since the major version with the contract switch <span class="in">`on_missing`</span>,</span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a><span class="in">`LinearlyInterpolateTS`</span> makes the treatment of remaining NaN values</span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>explicit. The class interpolates *inside* the series linearly</span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>(<span class="in">`limit_area="inside"`</span>), so middle gaps are cleanly closed, while</span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>endpoint gaps remain and are handled further according to the mode:</span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Mode              <span class="pp">|</span> Behaviour                                                                                                <span class="pp">|</span> Who uses this?                                       <span class="pp">|</span></span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a><span class="pp">|:------------------|:---------------------------------------------------------------------------------------------------------|:-----------------------------------------------------|</span></span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`"raise"`</span> (default)<span class="pp">|</span> Raises <span class="in">`ValueError`</span> with a preview of the first gaps as soon as any NaN values remain after interpolation. <span class="pp">|</span> Safety-critical pipeline; declares CR-3 actively. <span class="pp">|</span></span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`"ffill_bfill"`</span>    <span class="pp">|</span> Fills the remaining endpoint gaps by forward/backward fill.                                              <span class="pp">|</span> Migration from legacy notebooks; internally also part of the forecaster's training contract. <span class="pp">|</span></span>
+<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`"passthrough"`</span>    <span class="pp">|</span> Passes NaN through unchanged; the next step takes responsibility.                                        <span class="pp">|</span> When a downstream imputer (e.g. <span class="in">`WeightedAverageImputation`</span>) handles the gaps deliberately. <span class="pp">|</span></span>
+<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a><span class="fu">## Code in action: the default is `raise`</span></span>
+<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-62"><a href="#cb16-62" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-63"><a href="#cb16-63" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: load-y</span></span>
+<span id="cb16-64"><a href="#cb16-64" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-65"><a href="#cb16-65" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb16-66"><a href="#cb16-66" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb16-67"><a href="#cb16-67" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb16-68"><a href="#cb16-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-69"><a href="#cb16-69" aria-hidden="true" tabindex="-1"></a>shared <span class="op">=</span> Path(<span class="st">"_cache/shared"</span>)</span>
+<span id="cb16-70"><a href="#cb16-70" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> pd.read_parquet(shared <span class="op">/</span> <span class="st">"load_de_2024.parquet"</span>)[<span class="st">"load"</span>]</span>
+<span id="cb16-71"><a href="#cb16-71" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span><span class="bu">len</span>(y)<span class="sc">:,}</span><span class="ss"> hours loaded, </span><span class="sc">{</span><span class="bu">int</span>(y.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss"> NaN."</span>)</span>
+<span id="cb16-72"><a href="#cb16-72" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-73"><a href="#cb16-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-74"><a href="#cb16-74" aria-hidden="true" tabindex="-1"></a>We construct an artificial gap in the middle of the series to see the</span>
+<span id="cb16-75"><a href="#cb16-75" aria-hidden="true" tabindex="-1"></a>mechanism at work:</span>
+<span id="cb16-76"><a href="#cb16-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-79"><a href="#cb16-79" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-80"><a href="#cb16-80" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: insert-gap</span></span>
+<span id="cb16-81"><a href="#cb16-81" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-82"><a href="#cb16-82" aria-hidden="true" tabindex="-1"></a>y_with_gap <span class="op">=</span> y.copy()</span>
+<span id="cb16-83"><a href="#cb16-83" aria-hidden="true" tabindex="-1"></a>y_with_gap.iloc[<span class="dv">120</span>:<span class="dv">123</span>] <span class="op">=</span> np.nan        <span class="co"># three NaNs in a row</span></span>
+<span id="cb16-84"><a href="#cb16-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-85"><a href="#cb16-85" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Artificial NaNs: </span><span class="sc">{</span><span class="bu">int</span>(y_with_gap.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-86"><a href="#cb16-86" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Example:"</span>)</span>
+<span id="cb16-87"><a href="#cb16-87" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_with_gap.iloc[<span class="dv">118</span>:<span class="dv">126</span>].to_string())</span>
+<span id="cb16-88"><a href="#cb16-88" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-89"><a href="#cb16-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-92"><a href="#cb16-92" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-93"><a href="#cb16-93" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cr3-raise</span></span>
+<span id="cb16-94"><a href="#cb16-94" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-95"><a href="#cb16-95" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> spotforecast2_safe <span class="im">import</span> LinearlyInterpolateTS</span>
+<span id="cb16-96"><a href="#cb16-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-97"><a href="#cb16-97" aria-hidden="true" tabindex="-1"></a><span class="co"># `on_missing` is not specified -&gt; default 'raise'</span></span>
+<span id="cb16-98"><a href="#cb16-98" aria-hidden="true" tabindex="-1"></a>y_clean <span class="op">=</span> LinearlyInterpolateTS().fit_transform(y_with_gap)</span>
+<span id="cb16-99"><a href="#cb16-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-100"><a href="#cb16-100" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NaN after interpolation:  </span><span class="sc">{</span><span class="bu">int</span>(y_clean.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-101"><a href="#cb16-101" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(y_clean.iloc[<span class="dv">118</span>:<span class="dv">126</span>].to_string())</span>
+<span id="cb16-102"><a href="#cb16-102" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-103"><a href="#cb16-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-104"><a href="#cb16-104" aria-hidden="true" tabindex="-1"></a>The middle gap was cleanly closed because values on both sides were</span>
+<span id="cb16-105"><a href="#cb16-105" aria-hidden="true" tabindex="-1"></a>available. The default mode <span class="in">`raise`</span> only stops *if* NaN values remain</span>
+<span id="cb16-106"><a href="#cb16-106" aria-hidden="true" tabindex="-1"></a>after the interpolation --- typically at the start or end of the series.</span>
+<span id="cb16-107"><a href="#cb16-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-108"><a href="#cb16-108" aria-hidden="true" tabindex="-1"></a><span class="fu">## Endpoint gaps: here CR-3 shows its effect</span></span>
+<span id="cb16-109"><a href="#cb16-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-112"><a href="#cb16-112" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-113"><a href="#cb16-113" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cr3-edge</span></span>
+<span id="cb16-114"><a href="#cb16-114" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-115"><a href="#cb16-115" aria-hidden="true" tabindex="-1"></a>y_edge <span class="op">=</span> y.copy()</span>
+<span id="cb16-116"><a href="#cb16-116" aria-hidden="true" tabindex="-1"></a>y_edge.iloc[<span class="dv">0</span>:<span class="dv">2</span>] <span class="op">=</span> np.nan        <span class="co"># the first two hours are missing</span></span>
+<span id="cb16-117"><a href="#cb16-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-118"><a href="#cb16-118" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb16-119"><a href="#cb16-119" aria-hidden="true" tabindex="-1"></a>    LinearlyInterpolateTS(on_missing<span class="op">=</span><span class="st">"raise"</span>).fit_transform(y_edge)</span>
+<span id="cb16-120"><a href="#cb16-120" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">ValueError</span> <span class="im">as</span> exc:</span>
+<span id="cb16-121"><a href="#cb16-121" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Expected fail-safe abort:"</span>)</span>
+<span id="cb16-122"><a href="#cb16-122" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="bu">str</span>(exc))</span>
+<span id="cb16-123"><a href="#cb16-123" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-124"><a href="#cb16-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-125"><a href="#cb16-125" aria-hidden="true" tabindex="-1"></a>The error message contains a preview of the first gaps --- that is all a</span>
+<span id="cb16-126"><a href="#cb16-126" aria-hidden="true" tabindex="-1"></a>dispatcher or auditor needs to locate the gap precisely. Exactly this</span>
+<span id="cb16-127"><a href="#cb16-127" aria-hidden="true" tabindex="-1"></a>visibility is what Art. 12 of the AI Act (record-keeping) demands:</span>
+<span id="cb16-128"><a href="#cb16-128" aria-hidden="true" tabindex="-1"></a>nothing must fall under the table.</span>
+<span id="cb16-129"><a href="#cb16-129" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-130"><a href="#cb16-130" aria-hidden="true" tabindex="-1"></a><span class="fu">## `ffill_bfill` as a deliberate opt-in</span></span>
+<span id="cb16-131"><a href="#cb16-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-132"><a href="#cb16-132" aria-hidden="true" tabindex="-1"></a>If you want to tolerate endpoint gaps deliberately (e.g. at the start of</span>
+<span id="cb16-133"><a href="#cb16-133" aria-hidden="true" tabindex="-1"></a>a migration), you must declare this explicitly:</span>
+<span id="cb16-134"><a href="#cb16-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-137"><a href="#cb16-137" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-138"><a href="#cb16-138" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cr3-ffill</span></span>
+<span id="cb16-139"><a href="#cb16-139" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-140"><a href="#cb16-140" aria-hidden="true" tabindex="-1"></a>y_filled <span class="op">=</span> LinearlyInterpolateTS(on_missing<span class="op">=</span><span class="st">"ffill_bfill"</span>).fit_transform(y_edge)</span>
+<span id="cb16-141"><a href="#cb16-141" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NaN after 'ffill_bfill':   </span><span class="sc">{</span><span class="bu">int</span>(y_filled.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-142"><a href="#cb16-142" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"First five hours:"</span>, y_filled.iloc[:<span class="dv">5</span>].<span class="bu">round</span>(<span class="dv">2</span>).tolist())</span>
+<span id="cb16-143"><a href="#cb16-143" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-144"><a href="#cb16-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-145"><a href="#cb16-145" aria-hidden="true" tabindex="-1"></a>Internally <span class="in">`ForecasterRecursiveModel`</span> uses exactly this configuration in</span>
+<span id="cb16-146"><a href="#cb16-146" aria-hidden="true" tabindex="-1"></a>eight places --- not out of carelessness, but to satisfy the training</span>
+<span id="cb16-147"><a href="#cb16-147" aria-hidden="true" tabindex="-1"></a>invariant "no NaN in the lag window at training time" even when the</span>
+<span id="cb16-148"><a href="#cb16-148" aria-hidden="true" tabindex="-1"></a>caller passes the series without pre-processing. The contract is made</span>
+<span id="cb16-149"><a href="#cb16-149" aria-hidden="true" tabindex="-1"></a>visible at the call site; that is the difference from silent imputation.</span>
+<span id="cb16-150"><a href="#cb16-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-151"><a href="#cb16-151" aria-hidden="true" tabindex="-1"></a><span class="fu">## `passthrough`: responsibility passed to the caller</span></span>
+<span id="cb16-152"><a href="#cb16-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-155"><a href="#cb16-155" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-156"><a href="#cb16-156" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cr3-passthrough</span></span>
+<span id="cb16-157"><a href="#cb16-157" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-158"><a href="#cb16-158" aria-hidden="true" tabindex="-1"></a>y_pt <span class="op">=</span> LinearlyInterpolateTS(on_missing<span class="op">=</span><span class="st">"passthrough"</span>).fit_transform(y_edge)</span>
+<span id="cb16-159"><a href="#cb16-159" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"NaN after 'passthrough':  </span><span class="sc">{</span><span class="bu">int</span>(y_pt.isna().<span class="bu">sum</span>())<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-160"><a href="#cb16-160" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-161"><a href="#cb16-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-162"><a href="#cb16-162" aria-hidden="true" tabindex="-1"></a>Useful, for example, when a downstream <span class="in">`WeightedAverageImputation`</span> step</span>
+<span id="cb16-163"><a href="#cb16-163" aria-hidden="true" tabindex="-1"></a>fills the gaps deliberately. The <span class="in">`WARNING`</span> emitted by that imputer is</span>
+<span id="cb16-164"><a href="#cb16-164" aria-hidden="true" tabindex="-1"></a>shown so that the caller sees in the audit log that imputation has</span>
+<span id="cb16-165"><a href="#cb16-165" aria-hidden="true" tabindex="-1"></a>happened.</span>
+<span id="cb16-166"><a href="#cb16-166" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-167"><a href="#cb16-167" aria-hidden="true" tabindex="-1"></a><span class="fu">## Visualisation: before/after picture of gap handling</span></span>
+<span id="cb16-168"><a href="#cb16-168" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-171"><a href="#cb16-171" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-172"><a href="#cb16-172" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-gap-fill</span></span>
+<span id="cb16-173"><a href="#cb16-173" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Demonstration of the `LinearlyInterpolateTS` treatment. Top: an artificially injected gap (three consecutive NaN values) in January 2024. Bottom: the same series after the default call with `on_missing='raise'` --- the three NaNs are filled in by linear interpolation of the neighbouring values; because no endpoint gaps remain, no error is raised."</span></span>
+<span id="cb16-174"><a href="#cb16-174" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-175"><a href="#cb16-175" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb16-176"><a href="#cb16-176" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.dates <span class="im">as</span> mdates</span>
+<span id="cb16-177"><a href="#cb16-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-178"><a href="#cb16-178" aria-hidden="true" tabindex="-1"></a>window <span class="op">=</span> <span class="bu">slice</span>(<span class="dv">115</span>, <span class="dv">130</span>)</span>
+<span id="cb16-179"><a href="#cb16-179" aria-hidden="true" tabindex="-1"></a>fig, (ax_top, ax_bot) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="fl">8.0</span>, <span class="fl">4.5</span>), sharex<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb16-180"><a href="#cb16-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-181"><a href="#cb16-181" aria-hidden="true" tabindex="-1"></a>ax_top.plot(y_with_gap.iloc[window].index, y_with_gap.iloc[window].values <span class="op">/</span> <span class="dv">1000</span>,</span>
+<span id="cb16-182"><a href="#cb16-182" aria-hidden="true" tabindex="-1"></a>            <span class="st">"o-"</span>, color<span class="op">=</span><span class="st">"#B33A3A"</span>, linewidth<span class="op">=</span><span class="fl">1.0</span>, markersize<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb16-183"><a href="#cb16-183" aria-hidden="true" tabindex="-1"></a>ax_top.set_ylabel(<span class="st">"Load [GW]"</span>)</span>
+<span id="cb16-184"><a href="#cb16-184" aria-hidden="true" tabindex="-1"></a>ax_top.set_title(<span class="st">"before interpolation: three NaN"</span>)</span>
+<span id="cb16-185"><a href="#cb16-185" aria-hidden="true" tabindex="-1"></a>ax_top.grid(<span class="va">True</span>, color<span class="op">=</span><span class="st">"#E5E5E5"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb16-186"><a href="#cb16-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-187"><a href="#cb16-187" aria-hidden="true" tabindex="-1"></a>ax_bot.plot(y_clean.iloc[window].index, y_clean.iloc[window].values <span class="op">/</span> <span class="dv">1000</span>,</span>
+<span id="cb16-188"><a href="#cb16-188" aria-hidden="true" tabindex="-1"></a>            <span class="st">"o-"</span>, color<span class="op">=</span><span class="st">"#2E7D55"</span>, linewidth<span class="op">=</span><span class="fl">1.0</span>, markersize<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb16-189"><a href="#cb16-189" aria-hidden="true" tabindex="-1"></a>ax_bot.set_ylabel(<span class="st">"Load [GW]"</span>)</span>
+<span id="cb16-190"><a href="#cb16-190" aria-hidden="true" tabindex="-1"></a>ax_bot.set_title(<span class="st">"after `LinearlyInterpolateTS()` (default `on_missing='raise'`)"</span>)</span>
+<span id="cb16-191"><a href="#cb16-191" aria-hidden="true" tabindex="-1"></a>ax_bot.grid(<span class="va">True</span>, color<span class="op">=</span><span class="st">"#E5E5E5"</span>, linewidth<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb16-192"><a href="#cb16-192" aria-hidden="true" tabindex="-1"></a>ax_bot.xaxis.set_major_locator(mdates.HourLocator(byhour<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">12</span>]))</span>
+<span id="cb16-193"><a href="#cb16-193" aria-hidden="true" tabindex="-1"></a>ax_bot.xaxis.set_major_formatter(mdates.DateFormatter(<span class="st">"</span><span class="sc">%-d</span><span class="st">.%-m %H:%M"</span>))</span>
+<span id="cb16-194"><a href="#cb16-194" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-195"><a href="#cb16-195" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax <span class="kw">in</span> (ax_top, ax_bot):</span>
+<span id="cb16-196"><a href="#cb16-196" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> s <span class="kw">in</span> (<span class="st">"top"</span>, <span class="st">"right"</span>):</span>
+<span id="cb16-197"><a href="#cb16-197" aria-hidden="true" tabindex="-1"></a>        ax.spines[s].set_visible(<span class="va">False</span>)</span>
+<span id="cb16-198"><a href="#cb16-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-199"><a href="#cb16-199" aria-hidden="true" tabindex="-1"></a>fig.tight_layout()</span>
+<span id="cb16-200"><a href="#cb16-200" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb16-201"><a href="#cb16-201" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-202"><a href="#cb16-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-203"><a href="#cb16-203" aria-hidden="true" tabindex="-1"></a><span class="fu">## Which strategy when? --- a comparison at a glance</span></span>
+<span id="cb16-204"><a href="#cb16-204" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-205"><a href="#cb16-205" aria-hidden="true" tabindex="-1"></a>The three <span class="in">`LinearlyInterpolateTS`</span> modes and the annotation pipeline from</span>
+<span id="cb16-206"><a href="#cb16-206" aria-hidden="true" tabindex="-1"></a>@sec-annotation are not mutually exclusive --- they target different</span>
+<span id="cb16-207"><a href="#cb16-207" aria-hidden="true" tabindex="-1"></a>points in the lifecycle of the data. Before mapping the application</span>
+<span id="cb16-208"><a href="#cb16-208" aria-hidden="true" tabindex="-1"></a>situations, a direct comparison of the two strategies' *structural</span>
+<span id="cb16-209"><a href="#cb16-209" aria-hidden="true" tabindex="-1"></a>properties* is worthwhile:</span>
+<span id="cb16-210"><a href="#cb16-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-211"><a href="#cb16-211" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Property                                  <span class="pp">|</span> <span class="in">`LinearlyInterpolateTS`</span>                              <span class="pp">|</span> <span class="in">`mark_outliers`</span> + <span class="in">`get_missing_weights`</span> (@sec-annotation) <span class="pp">|</span></span>
+<span id="cb16-212"><a href="#cb16-212" aria-hidden="true" tabindex="-1"></a><span class="pp">|:------------------------------------------|:----------------------------------------------------|:----------------------------------------------------------|</span></span>
+<span id="cb16-213"><a href="#cb16-213" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Series length after pre-processing        <span class="pp">|</span> unchanged                                          <span class="pp">|</span> unchanged                                                <span class="pp">|</span></span>
+<span id="cb16-214"><a href="#cb16-214" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> NaN guarantee after the step              <span class="pp">|</span> only in <span class="in">`ffill_bfill`</span> mode / after interpolation    <span class="pp">|</span> yes, guaranteed after <span class="in">`get_missing_weights`</span>              <span class="pp">|</span></span>
+<span id="cb16-215"><a href="#cb16-215" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Training target contains invented values  <span class="pp">|</span> yes (line between neighbours)                       <span class="pp">|</span> no (real values; broken values are ffill placeholders with weight 0) <span class="pp">|</span></span>
+<span id="cb16-216"><a href="#cb16-216" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Auditability of the action                <span class="pp">|</span> indirect (<span class="in">`raise`</span> error message)                    <span class="pp">|</span> direct (<span class="in">`verbose=True`</span> lists indices; <span class="in">`weights`</span> is serialisable) <span class="pp">|</span></span>
+<span id="cb16-217"><a href="#cb16-217" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Model bias due to imputation              <span class="pp">|</span> possible                                           <span class="pp">|</span> structurally excluded (weight 0)                          <span class="pp">|</span></span>
+<span id="cb16-218"><a href="#cb16-218" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Recommendation for high-risk applications <span class="pp">|</span> only as a migration path or with a downstream imputer <span class="pp">|</span> **standard strategy**                                  <span class="pp">|</span></span>
+<span id="cb16-219"><a href="#cb16-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-220"><a href="#cb16-220" aria-hidden="true" tabindex="-1"></a>The following table translates these structural differences into</span>
+<span id="cb16-221"><a href="#cb16-221" aria-hidden="true" tabindex="-1"></a>concrete application situations:</span>
+<span id="cb16-222"><a href="#cb16-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-223"><a href="#cb16-223" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Situation                                                    <span class="pp">|</span> Recommended strategy                                  <span class="pp">|</span></span>
+<span id="cb16-224"><a href="#cb16-224" aria-hidden="true" tabindex="-1"></a><span class="pp">|:-------------------------------------------------------------|:------------------------------------------------------|</span></span>
+<span id="cb16-225"><a href="#cb16-225" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Production high-risk pipeline (Annex III)                    <span class="pp">|</span> **Annotation** (@sec-annotation); interpolation only as a downstream special step <span class="pp">|</span></span>
+<span id="cb16-226"><a href="#cb16-226" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Middle gaps of individual hours, no systematic outlier search needed <span class="pp">|</span> <span class="in">`LinearlyInterpolateTS(on_missing="raise")`</span> as a CR-3 switch <span class="pp">|</span></span>
+<span id="cb16-227"><a href="#cb16-227" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Migration from legacy notebooks without a <span class="in">`weight_func`</span> path <span class="pp">|</span> <span class="in">`LinearlyInterpolateTS(on_missing="ffill_bfill")`</span> as a bridge <span class="pp">|</span></span>
+<span id="cb16-228"><a href="#cb16-228" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Own downstream imputer                                       <span class="pp">|</span> <span class="in">`LinearlyInterpolateTS(on_missing="passthrough")`</span>     <span class="pp">|</span></span>
+<span id="cb16-229"><a href="#cb16-229" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Audit requires an explicit, picklable weight series          <span class="pp">|</span> **Annotation** (@sec-annotation); weights are part of the model artefact <span class="pp">|</span></span>
+<span id="cb16-230"><a href="#cb16-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-231"><a href="#cb16-231" aria-hidden="true" tabindex="-1"></a>If in doubt, start with the annotation from @sec-annotation and only</span>
+<span id="cb16-232"><a href="#cb16-232" aria-hidden="true" tabindex="-1"></a>fall back to <span class="in">`LinearlyInterpolateTS`</span> when there is a concrete argument</span>
+<span id="cb16-233"><a href="#cb16-233" aria-hidden="true" tabindex="-1"></a>against the weight series.</span>
+<span id="cb16-234"><a href="#cb16-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-235"><a href="#cb16-235" aria-hidden="true" tabindex="-1"></a><span class="fu">## Persisting for follow-up chapters</span></span>
+<span id="cb16-236"><a href="#cb16-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-237"><a href="#cb16-237" aria-hidden="true" tabindex="-1"></a>We take the clean series as the starting point for all the following steps:</span>
+<span id="cb16-238"><a href="#cb16-238" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-241"><a href="#cb16-241" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb16-242"><a href="#cb16-242" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: persist-clean</span></span>
+<span id="cb16-243"><a href="#cb16-243" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<span id="cb16-244"><a href="#cb16-244" aria-hidden="true" tabindex="-1"></a>y_clean.to_frame(<span class="st">"load"</span>).to_parquet(shared <span class="op">/</span> <span class="st">"load_de_2024_clean.parquet"</span>)</span>
+<span id="cb16-245"><a href="#cb16-245" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Cleaned series persisted."</span>)</span>
+<span id="cb16-246"><a href="#cb16-246" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb16-247"><a href="#cb16-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-248"><a href="#cb16-248" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip title="Exercises (with Claude)"}</span>
+<span id="cb16-249"><a href="#cb16-249" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>*Three modes on the same example.* Ask Claude to write a small</span>
+<span id="cb16-250"><a href="#cb16-250" aria-hidden="true" tabindex="-1"></a>   comparison table showing, for the three modes <span class="in">`raise`</span>, <span class="in">`ffill_bfill`</span>,</span>
+<span id="cb16-251"><a href="#cb16-251" aria-hidden="true" tabindex="-1"></a>   <span class="in">`passthrough`</span> on a series with *both* a middle and an endpoint gap,</span>
+<span id="cb16-252"><a href="#cb16-252" aria-hidden="true" tabindex="-1"></a>   what the result looks like in each case. Which mode is directly</span>
+<span id="cb16-253"><a href="#cb16-253" aria-hidden="true" tabindex="-1"></a>   compatible with Art. 10 of the AI Act?</span>
+<span id="cb16-254"><a href="#cb16-254" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>*Comparison with pandas.* Have Claude compare</span>
+<span id="cb16-255"><a href="#cb16-255" aria-hidden="true" tabindex="-1"></a>   <span class="in">`pandas.Series.interpolate()`</span> directly with</span>
+<span id="cb16-256"><a href="#cb16-256" aria-hidden="true" tabindex="-1"></a>   <span class="in">`LinearlyInterpolateTS(on_missing='raise')`</span>. On an example with gaps</span>
+<span id="cb16-257"><a href="#cb16-257" aria-hidden="true" tabindex="-1"></a>   at the edge: what happens in each variant? Which default is more</span>
+<span id="cb16-258"><a href="#cb16-258" aria-hidden="true" tabindex="-1"></a>   suitable for a safety-critical pipeline?</span>
+<span id="cb16-259"><a href="#cb16-259" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>*Test the contract.* Ask Claude how you would write a *test* that, in</span>
+<span id="cb16-260"><a href="#cb16-260" aria-hidden="true" tabindex="-1"></a>   a CI pipeline, ensures that <span class="in">`LinearlyInterpolateTS()`</span> (without an</span>
+<span id="cb16-261"><a href="#cb16-261" aria-hidden="true" tabindex="-1"></a>   explicit argument) preserves the default <span class="in">`on_missing='raise'`</span>. Argue</span>
+<span id="cb16-262"><a href="#cb16-262" aria-hidden="true" tabindex="-1"></a>   why this property must be tested as a *contract* --- and not just</span>
+<span id="cb16-263"><a href="#cb16-263" aria-hidden="true" tabindex="-1"></a>   stated in the documentation.</span>
+<span id="cb16-264"><a href="#cb16-264" aria-hidden="true" tabindex="-1"></a>:::</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

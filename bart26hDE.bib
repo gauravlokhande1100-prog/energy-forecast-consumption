@@ -1,0 +1,1040 @@
+%% SPDX-FileCopyrightText: 2026 bartzbeielstein
+%% SPDX-License-Identifier: AGPL-3.0-or-later
+%%
+%% Bibliography for bart26h -- "Time-series forecasting in safety-critical environments".
+%% Hybrid: subset reused from bart26g.bib (spotoptim companion report) plus
+%% fresh entries for safety-critical / forecasting / compliance literature.
+
+%% =========================================================================
+%% Reused from bart26g.bib (verified cite-keys)
+%% =========================================================================
+
+@book{bart21i,
+  editor    = {Bartz, Eva and Bartz-Beielstein, Thomas and Zaefferer, Martin and Mersmann, Olaf},
+  publisher = {Springer},
+  title     = {{Hyperparameter Tuning for Machine and Deep Learning with R - A Practical Guide}},
+  year      = {2022},
+  doi       = {10.1007/978-981-19-5170-1}
+}
+
+@article{bart21b,
+  author  = {{Bartz-Beielstein}, Thomas and {Zaefferer}, Martin and {Rehbach}, Frederik},
+  journal = {arXiv e-prints},
+  month   = dec,
+  pages   = {arXiv:1712.04076},
+  title   = {{In a Nutshell -- The Sequential Parameter Optimization Toolbox}},
+  year    = {2021},
+  doi     = {10.48550/arXiv.1712.04076},
+  url     = {https://arxiv.org/abs/1712.04076}
+}
+
+@article{bart23iArXiv,
+  author  = {{Bartz-Beielstein}, Thomas},
+  title   = {Hyperparameter Tuning Cookbook: A guide for scikit-learn, PyTorch, river, and spotpython},
+  journal = {arXiv e-prints},
+  year    = {2023},
+  month   = jul,
+  eid     = {arXiv:2307.10262},
+  doi     = {10.48550/arXiv.2307.10262},
+  url     = {https://arxiv.org/abs/2307.10262}
+}
+
+@misc{bart20gArxiv,
+  archiveprefix = {arXiv},
+  author        = {Thomas Bartz-Beielstein and Carola Doerr and Jakob Bossek and Sowmya Chandrasekaran and Tome Eftimov and Andreas Fischbach and Pascal Kerschke and Manuel Lopez-Ibanez and Katherine M. Malan and Jason H. Moore and Boris Naujoks and Patryk Orzechowski and Vanessa Volz and Markus Wagner and Thomas Weise},
+  eprint        = {2007.03488},
+  howpublished  = {arXiv},
+  primaryclass  = {cs.NE},
+  title         = {Benchmarking in Optimization: Best Practice and Open Issues},
+  doi           = {10.48550/arXiv.2007.03488},
+  url           = {https://arxiv.org/abs/2007.03488},
+  year          = {2020}
+}
+
+
+
+
+@article{kose24a,
+  author  = {Kosenkov, Oleksandr and Elahidoost, Parisa and Gorschek, Tony and
+             Fischbach, Jannik and M{\'e}ndez, Daniel and Unterkalmsteiner, Michael and
+             Fucci, Davide and Mohanani, Rahul},
+  title   = {Systematic Mapping Study on Requirements Engineering for Regulatory
+             Compliance of Software Systems},
+  journal = {Information and Software Technology},
+  year    = {2024},
+  doi     = {10.1016/j.infsof.2024.107622},
+  note    = {ScienceDirect PII S0950584924002271},
+  url     = {https://www.sciencedirect.com/science/article/pii/S0950584924002271}
+}
+
+@article{pedr11a,
+  author  = {Pedregosa, F. and Varoquaux, G. and Gramfort, A. and Michel, V. and Thirion, B. and Grisel, O. and Blondel, M. and Prettenhofer, P. and Weiss, R. and Dubourg, V. and Vanderplas, J. and Passos, A. and Cournapeau, D. and Brucher, M. and Perrot, M. and Duchesnay, E.},
+  journal = {Journal of Machine Learning Research},
+  pages   = {2825--2830},
+  title   = {Scikit-learn: Machine Learning in {P}ython},
+  volume  = {12},
+  year    = {2011},
+  url     = {https://jmlr.org/papers/v12/pedregosa11a.html}
+}
+
+@inproceedings{ke17a,
+  author    = {Ke, Guolin and Meng, Qi and Finley, Thomas and Wang, Taifeng and Chen, Wei and Ma, Weidong and Ye, Qiwei and Liu, Tie-Yan},
+  booktitle = {Advances in Neural Information Processing Systems},
+  publisher = {Curran Associates, Inc.},
+  title     = {{LightGBM}: A Highly Efficient Gradient Boosting Decision Tree},
+  volume    = {30},
+  year      = {2017},
+  url       = {https://papers.nips.cc/paper_files/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html}
+}
+
+@article{harr20a,
+  author  = {Harris, Charles R. and Millman, K. Jarrod and van der Walt, St{\'e}fan J. and Gommers, Ralf and Virtanen, Pauli and Cournapeau, David and Wieser, Eric and Taylor, Julian and Berg, Sebastian and Smith, Nathaniel J. and Kern, Robert and Picus, Matti and Hoyer, Stephan and van Kerkwijk, Marten H. and Brett, Matthew and Haldane, Allan and Fern{\'a}ndez del R{\'\i}o, Jaime and Wiebe, Mark and Peterson, Pearu and G{\'e}rard-Marchant, Pierre and Sheppard, Kevin and Reddy, Tyler and Weckesser, Warren and Abbasi, Hameer and Gohlke, Christoph and Oliphant, Travis E.},
+  journal = {Nature},
+  number  = {7825},
+  pages   = {357--362},
+  title   = {Array programming with {NumPy}},
+  volume  = {585},
+  year    = {2020},
+  doi     = {10.1038/s41586-020-2649-2}
+}
+
+%% =========================================================================
+%% Core Python / tooling references (fresh)
+%% =========================================================================
+
+@inproceedings{chen16a,
+  author    = {Chen, Tianqi and Guestrin, Carlos},
+  booktitle = {Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  title     = {{XGBoost}: A Scalable Tree Boosting System},
+  year      = {2016},
+  pages     = {785--794},
+  publisher = {ACM},
+  doi       = {10.1145/2939672.2939785}
+}
+
+@inproceedings{mcki10a,
+  author    = {McKinney, Wes},
+  booktitle = {Proceedings of the 9th {P}ython in {S}cience {C}onference},
+  title     = {Data Structures for Statistical Computing in {P}ython},
+  pages     = {56--61},
+  year      = {2010},
+  doi       = {10.25080/Majora-92bf1922-00a}
+}
+
+@inproceedings{lam15a,
+  author    = {Lam, Siu Kwan and Pitrou, Antoine and Seibert, Stanley},
+  booktitle = {Proceedings of the Second Workshop on the {LLVM} Compiler Infrastructure in {HPC}},
+  title     = {{Numba}: A {LLVM}-based {P}ython {JIT} Compiler},
+  year      = {2015},
+  publisher = {ACM},
+  doi       = {10.1145/2833157.2833162}
+}
+
+@misc{scip24a,
+  author       = {{Amat Rodrigo}, Joaqu{\'i}n and Escobar Ortiz, Javier},
+  title        = {skforecast: Time Series Forecasting with Machine Learning Models},
+  howpublished = {Zenodo},
+  year         = {2025},
+  doi          = {10.5281/zenodo.8382788},
+  url          = {https://skforecast.org}
+}
+
+%% =========================================================================
+%% Forecasting foundations (fresh)
+%% =========================================================================
+
+@book{hynd21a,
+  author    = {Hyndman, Rob J. and Athanasopoulos, George},
+  title     = {Forecasting: Principles and Practice},
+  edition   = {3rd},
+  publisher = {OTexts},
+  address   = {Melbourne, Australia},
+  year      = {2021},
+  url       = {https://otexts.com/fpp3/}
+}
+
+@book{box15a,
+  author    = {Box, George E. P. and Jenkins, Gwilym M. and Reinsel, Gregory C. and Ljung, Greta M.},
+  title     = {Time Series Analysis: Forecasting and Control},
+  edition   = {5th},
+  publisher = {Wiley},
+  year      = {2015},
+  isbn      = {978-1-118-67502-1},
+  url       = {https://www.wiley.com/en-us/Time+Series+Analysis%3A+Forecasting+and+Control%2C+5th+Edition-p-9781118675021}
+}
+
+@article{gooi06a,
+  author  = {De Gooijer, Jan G. and Hyndman, Rob J.},
+  journal = {International Journal of Forecasting},
+  number  = {3},
+  pages   = {443--473},
+  title   = {25 Years of Time Series Forecasting},
+  volume  = {22},
+  year    = {2006},
+  doi     = {10.1016/j.ijforecast.2006.01.001}
+}
+
+@article{makr20a,
+  author  = {Makridakis, Spyros and Spiliotis, Evangelos and Assimakopoulos, Vassilios},
+  journal = {International Journal of Forecasting},
+  number  = {1},
+  pages   = {54--74},
+  title   = {The {M4} Competition: 100{,}000 Time Series and 61 Forecasting Methods},
+  volume  = {36},
+  year    = {2020},
+  doi     = {10.1016/j.ijforecast.2019.04.014}
+}
+
+@article{makr22a,
+  author  = {Makridakis, Spyros and Spiliotis, Evangelos and Assimakopoulos, Vassilios},
+  journal = {International Journal of Forecasting},
+  number  = {4},
+  pages   = {1346--1364},
+  title   = {{M5} Accuracy Competition: Results, Findings, and Conclusions},
+  volume  = {38},
+  year    = {2022},
+  doi     = {10.1016/j.ijforecast.2021.11.013}
+}
+
+@article{hynd06a,
+  author  = {Hyndman, Rob J. and Koehler, Anne B.},
+  journal = {International Journal of Forecasting},
+  number  = {4},
+  pages   = {679--688},
+  title   = {Another look at measures of forecast accuracy},
+  volume  = {22},
+  year    = {2006},
+  doi     = {10.1016/j.ijforecast.2006.03.001}
+}
+
+@article{hong14a,
+  author  = {Hong, Tao and Pinson, Pierre and Fan, Shu},
+  journal = {International Journal of Forecasting},
+  number  = {2},
+  pages   = {357--363},
+  title   = {Global Energy Forecasting Competition 2012},
+  volume  = {30},
+  year    = {2014},
+  doi     = {10.1016/j.ijforecast.2013.07.001}
+}
+
+@article{hong16a,
+  author  = {Hong, Tao and Pinson, Pierre and Fan, Shu and Zareipour, Hamidreza and Troccoli, Alberto and Hyndman, Rob J.},
+  journal = {International Journal of Forecasting},
+  number  = {3},
+  pages   = {896--913},
+  title   = {Probabilistic energy forecasting: Global Energy Forecasting Competition 2014 and beyond},
+  volume  = {32},
+  year    = {2016},
+  doi     = {10.1016/j.ijforecast.2016.02.001}
+}
+
+@article{hong19a,
+  author  = {Hong, Tao and Xie, Jingrui and Black, Jonathan},
+  journal = {International Journal of Forecasting},
+  number  = {4},
+  pages   = {1389--1399},
+  title   = {Global energy forecasting competition 2017: Hierarchical probabilistic load forecasting},
+  volume  = {35},
+  year    = {2019},
+  doi     = {10.1016/j.ijforecast.2019.02.006}
+}
+
+@article{bergm12a,
+  author  = {Bergmeir, Christoph and Benitez, Jose M.},
+  journal = {Information Sciences},
+  pages   = {191--209},
+  title   = {On the use of cross-validation for time series predictor evaluation},
+  volume  = {191},
+  year    = {2012},
+  doi     = {10.1016/j.ins.2011.12.028}
+}
+
+@article{pins13a,
+  author  = {Pinson, Pierre},
+  journal = {Philosophical Transactions of the Royal Society A},
+  number  = {1984},
+  pages   = {20120300},
+  title   = {Wind energy: Forecasting challenges for its operational management},
+  volume  = {371},
+  year    = {2013},
+  doi     = {10.1098/rsta.2012.0300}
+}
+
+@article{herz22a,
+  author  = {Herzen, Julien and L{\"a}ssig, Francesco and Piazzetta, Samuele Giuliano and Neuer, Thomas and Tafti, L{\'e}o and Raille, Guillaume and Van Pottelbergh, Tomas and Pasieka, Marek and Skrodzki, Andrzej and Huguenin, Nicolas and others},
+  journal = {Journal of Machine Learning Research},
+  number  = {124},
+  pages   = {1--6},
+  title   = {Darts: User-Friendly Modern Machine Learning for Time Series},
+  volume  = {23},
+  year    = {2022},
+  url     = {https://jmlr.org/papers/v23/21-1177.html}
+}
+
+@misc{garz22a,
+  author       = {Garza, Federico and Challu, Cristian and Mergenthaler-Canseco, Max},
+  title        = {{StatsForecast}: Lightning Fast Forecasting with Statistical and Econometric Models},
+  howpublished = {PyCon Salt Lake City 2022},
+  year         = {2022},
+  url          = {https://github.com/Nixtla/statsforecast}
+}
+
+@inproceedings{loni19a,
+  author    = {L{\"o}ning, Markus and Bagnall, Anthony and Ganesh, Sajaysurya and Kazakov, Viktor and Lines, Jason and Kir{\'a}ly, Franz J.},
+  title     = {sktime: A Unified Interface for Machine Learning with Time Series},
+  booktitle = {Workshop on Systems for ML at NeurIPS 2019},
+  year      = {2019},
+  doi       = {10.48550/arXiv.1909.07872},
+  url       = {https://arxiv.org/abs/1909.07872}
+}
+
+@misc{loni20a,
+  author       = {L{\"o}ning, Markus and Bagnall, Tony and Ganesh, Sajaysurya and Oastler, George and Lines, Jason and {ViktorKaz} and Deshmukh, Aadesh and others},
+  title        = {sktime/sktime},
+  howpublished = {Zenodo},
+  year         = {2020},
+  doi          = {10.5281/zenodo.3749000},
+  url          = {https://doi.org/10.5281/zenodo.3749000}
+}
+
+@misc{ogui23a,
+  author       = {Oguiza, Ignacio},
+  title        = {tsai -- A state-of-the-art deep learning library for time series and sequential data},
+  howpublished = {GitHub},
+  year         = {2023},
+  url          = {https://github.com/timeseriesAI/tsai}
+}
+
+@article{bhat21a,
+  author        = {Bhatnagar, Aadyot and Kassianik, Paul and Liu, Chenghao and Lan, Tian and Yang, Wenzhuo and Cassius, Rowan and Sahoo, Doyen and Arpit, Devansh and Subramanian, Sriharsha and Woo, Gerald and Saha, Amrita and Jagota, Arun Kumar and Gopalakrishnan, Gokulakrishnan and Singh, Manpreet and Krithika, K. C. and Maddineni, Sukumar and Cho, Daeki and Zong, Bo and Zhou, Yingbo and Xiong, Caiming and Savarese, Silvio and Hoi, Steven and Wang, Huan},
+  title         = {Merlion: A Machine Learning Library for Time Series},
+  journal       = {arXiv e-prints},
+  year          = {2021},
+  eprint        = {2109.09265},
+  archiveprefix = {arXiv},
+  doi           = {10.48550/arXiv.2109.09265},
+  url           = {https://arxiv.org/abs/2109.09265}
+}
+
+@misc{jian22a,
+  author       = {Jiang, Xiaodong and Srivastava, Sudeep and Chatterjee, Sourav and Yu, Yang and Handler, Jeffrey and Zhang, Peiyi and Bopardikar, Rohan and Li, Dawei and Lin, Yanjun and Thakore, Uttam and Brundage, Michael and Holt, Ginger and Komurlu, Caner and Nagalla, Rakshita and Wang, Zhichao and Sun, Hechao and Gao, Peng and Cheung, Wei and Gao, Jun and Wang, Qi and Guerard, Marius and Kazemi, Morteza and Chen, Yulin and Zhou, Chong and Lee, Sean and Laptev, Nikolay and Levendovszky, Tiham{\'e}r and Taylor, Jake and Qian, Huijun and Zhang, Jian and Shoydokova, Aida and Singh, Trisha and Zhu, Chengjun and Baz, Zeynep and Bergmeir, Christoph and Yu, Di and Koylan, Ahmet and Jiang, Kun and Temiyasathit, Ploy and Yurtbay, Emre},
+  title        = {{Kats}},
+  howpublished = {GitHub},
+  year         = {2022},
+  version      = {0.2.0},
+  url          = {https://github.com/facebookresearch/Kats}
+}
+
+%% =========================================================================
+%% Safety-critical / regulatory references (fresh)
+%% =========================================================================
+
+@misc{euro24a,
+  author       = {{European Parliament and Council}},
+  title        = {Regulation ({EU}) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence ({AI} Act)},
+  howpublished = {Official Journal of the European Union, {L}~series},
+  year         = {2024},
+  url          = {https://eur-lex.europa.eu/eli/reg/2024/1689/oj}
+}
+
+@book{hens24a,
+  author    = {Hense, Peter and Musta{\'c}, Tea},
+  title     = {{AI} {Act} compact: Compliance, management \& use cases in corporate practice},
+  series    = {InTeR-Schriftenreihe},
+  publisher = {Fachmedien Recht und Wirtschaft in Deutscher Fachverlag},
+  address   = {Frankfurt am Main},
+  year      = {2024},
+  isbn      = {978-3-8005-1960-6},
+  note      = {E-book ISBN 978-3-8005-9772-7}
+}
+
+@manual{iec61508,
+  author       = {{International Electrotechnical Commission}},
+  title        = {{IEC} 61508-3:2010 -- Functional safety of electrical/electronic/programmable electronic safety-related systems -- Part~3: Software requirements},
+  organization = {{IEC}},
+  year         = {2010},
+  address      = {Geneva},
+  url          = {https://webstore.iec.ch/en/publication/5517}
+}
+
+@manual{iso26262,
+  author       = {{International Organization for Standardization}},
+  title        = {{ISO} 26262-6:2018 -- Road vehicles -- Functional safety -- Part~6: Product development at the software level},
+  organization = {{ISO}},
+  year         = {2018},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/68388.html}
+}
+
+@manual{iec61508_4,
+  author       = {{International Electrotechnical Commission}},
+  title        = {{IEC} 61508-4:2010 -- Functional safety of electrical/electronic/programmable electronic safety-related systems -- Part~4: Definitions and abbreviations},
+  organization = {{IEC}},
+  year         = {2010},
+  address      = {Geneva},
+  url          = {https://webstore.iec.ch/en/publication/5518}
+}
+
+@manual{iso26262_3,
+  author       = {{International Organization for Standardization}},
+  title        = {{ISO} 26262-3:2018 -- Road vehicles -- Functional safety -- Part~3: Concept phase},
+  organization = {{ISO}},
+  year         = {2018},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/68385.html}
+}
+
+@manual{iso23894,
+  author       = {{International Organization for Standardization}},
+  title        = {{ISO/IEC} 23894:2023 -- Information technology -- Artificial intelligence -- Guidance on risk management},
+  organization = {{ISO/IEC}},
+  year         = {2023},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/77304.html}
+}
+
+@manual{isoiec25059,
+  author       = {{International Organization for Standardization}},
+  title        = {{ISO/IEC} 25059:2023 -- Software engineering -- Systems and software Quality Requirements and Evaluation ({SQuaRE}) -- Quality model for {AI} systems},
+  organization = {{ISO/IEC}},
+  year         = {2023},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/80655.html}
+}
+
+@techreport{nist80053,
+  author      = {{Joint Task Force}},
+  title       = {Security and Privacy Controls for Information Systems and Organizations},
+  institution = {National Institute of Standards and Technology},
+  type        = {{NIST} Special Publication},
+  number      = {800-53, Rev.~5},
+  year        = {2020},
+  doi         = {10.6028/NIST.SP.800-53r5}
+}
+
+@techreport{nist800161,
+  author      = {Boyens, Jon M. and Paulsen, Celia and Moorthy, Rama and Bartol, Nadya and Winkler, Stephen A.},
+  title       = {Cybersecurity Supply Chain Risk Management Practices for Systems and Organizations},
+  institution = {National Institute of Standards and Technology},
+  type        = {{NIST} Special Publication},
+  number      = {800-161, Rev.~1},
+  year        = {2022},
+  doi         = {10.6028/NIST.SP.800-161r1}
+}
+
+@techreport{nistir7695,
+  author      = {Cheikes, Brant A. and Waltermire, David and Scarfone, Karen},
+  title       = {Common Platform Enumeration: Naming Specification Version 2.3},
+  institution = {National Institute of Standards and Technology},
+  type        = {{NIST} Interagency Report},
+  number      = {7695},
+  year        = {2011},
+  doi         = {10.6028/NIST.IR.7695}
+}
+
+@manual{reuse30,
+  author       = {{Free Software Foundation Europe}},
+  title        = {{REUSE} Specification, Version 3.0},
+  organization = {{FSFE}},
+  year         = {2022},
+  url          = {https://reuse.software/spec-3.0/}
+}
+
+@manual{iso5962,
+  author       = {{International Organization for Standardization} and {International Electrotechnical Commission}},
+  title        = {{ISO/IEC} 5962:2021 -- Information technology -- {SPDX}{\textregistered} Specification V2.2.1},
+  organization = {{ISO/IEC JTC 1}},
+  year         = {2021},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/81870.html}
+}
+
+@misc{cisa23sbom,
+  author       = {{Cybersecurity and Infrastructure Security Agency}},
+  title        = {Software Bill of Materials ({SBOM})},
+  howpublished = {CISA Resource},
+  year         = {2023},
+  url          = {https://www.cisa.gov/sbom}
+}
+
+%% =========================================================================
+%% Technical-debt / MLOps references (fresh)
+%% =========================================================================
+
+@inproceedings{scul15a,
+  author    = {Sculley, D. and Holt, Gary and Golovin, Daniel and Davydov, Eugene and Phillips, Todd and Ebner, Dietmar and Chaudhary, Vinay and Young, Michael and Crespo, Jean-Fran{\c c}ois and Dennison, Dan},
+  booktitle = {Advances in Neural Information Processing Systems},
+  title     = {Hidden Technical Debt in Machine Learning Systems},
+  volume    = {28},
+  year      = {2015},
+  url       = {https://papers.nips.cc/paper_files/paper/2015/hash/86df7dcfd896fcaf2674f757a2463eba-Abstract.html}
+}
+
+@article{amer19a,
+  author  = {Amershi, Saleema and Begel, Andrew and Bird, Christian and DeLine, Robert and Gall, Harald and Kamar, Ece and Nagappan, Nachiappan and Nushi, Besmira and Zimmermann, Thomas},
+  journal = {Proceedings of the 41st International Conference on Software Engineering: Software Engineering in Practice},
+  pages   = {291--300},
+  title   = {Software Engineering for Machine Learning: A Case Study},
+  year    = {2019},
+  doi     = {10.1109/ICSE-SEIP.2019.00042}
+}
+
+@article{mitc19a,
+  author  = {Mitchell, Margaret and Wu, Simone and Zaldivar, Andrew and Barnes, Parker and Vasserman, Lucy and Hutchinson, Ben and Spitzer, Elena and Raji, Inioluwa Deborah and Gebru, Timnit},
+  journal = {Proceedings of the Conference on Fairness, Accountability, and Transparency},
+  pages   = {220--229},
+  title   = {Model Cards for Model Reporting},
+  year    = {2019},
+  doi     = {10.1145/3287560.3287596}
+}
+
+@article{gebr21a,
+  author  = {Gebru, Timnit and Morgenstern, Jamie and Vecchione, Briana and Vaughan, Jennifer Wortman and Wallach, Hanna and Daum{\'e} III, Hal and Crawford, Kate},
+  journal = {Communications of the ACM},
+  number  = {12},
+  pages   = {86--92},
+  title   = {Datasheets for Datasets},
+  volume  = {64},
+  year    = {2021},
+  doi     = {10.1145/3458723}
+}
+
+@misc{ozon22a,
+  author       = {Ozoani, Ezi and Gerchick, Marissa and Mitchell, Margaret},
+  title        = {Model Card Guidebook},
+  year         = {2022},
+  publisher    = {Hugging Face},
+  howpublished = {\url{https://huggingface.co/docs/hub/en/model-card-guidebook}},
+  note         = {Accessed 2026-04-19}
+}
+
+%% =========================================================================
+%% Data sources / domain (fresh)
+%% =========================================================================
+
+@misc{entsoe24,
+  author       = {{ENTSO-E}},
+  title        = {{ENTSO-E} Transparency Platform},
+  howpublished = {European Network of Transmission System Operators for Electricity},
+  year         = {2024},
+  url          = {https://transparency.entsoe.eu}
+}
+
+@misc{openmeteo24,
+  author       = {{Zippenfenig}, Patrick},
+  title        = {{Open-Meteo}.com Weather {API}},
+  howpublished = {Zenodo},
+  year         = {2024},
+  doi          = {10.5281/zenodo.7970649},
+  url          = {https://open-meteo.com/}
+}
+
+%% =========================================================================
+%% Statistical learning / determinism context (fresh)
+%% =========================================================================
+
+@article{brei01a,
+  author  = {Breiman, Leo},
+  journal = {Statistical Science},
+  number  = {3},
+  pages   = {199--231},
+  title   = {Statistical Modeling: The Two Cultures},
+  volume  = {16},
+  year    = {2001},
+  doi     = {10.1214/ss/1009213726}
+}
+
+
+@inproceedings{naga17a,
+  author    = {Nagarajan, Prabhat and Warnell, Garrett and Stone, Peter},
+  booktitle = {2nd Reproducibility in Machine Learning Workshop at ICML 2018},
+  title     = {The Impact of Nondeterminism on Reproducibility in Deep Reinforcement Learning},
+  year      = {2018},
+  doi       = {10.48550/arXiv.1809.05676},
+  url       = {https://openreview.net/forum?id=S1e-OsZ4e7},
+  note      = {arXiv:1809.05676}
+}
+
+@inproceedings{pine18a,
+  author    = {Pineau, Joelle and Vincent-Lamarre, Philippe and Sinha, Koustuv and Larivi{\`e}re, Vincent and Beygelzimer, Alina and d'Alch{\'e}-Buc, Florence and Fox, Emily and Larochelle, Hugo},
+  booktitle = {Journal of Machine Learning Research},
+  title     = {Improving Reproducibility in Machine Learning Research: A Report from the {NeurIPS} 2019 Reproducibility Program},
+  volume    = {22},
+  number    = {164},
+  pages     = {1--20},
+  year      = {2021},
+  url       = {https://jmlr.org/papers/v22/20-303.html}
+}
+
+%% =========================================================================
+%% ISA/IEC 62443 series and CPS / OT cybersecurity literature
+%% =========================================================================
+
+@techreport{iec62443_1_1,
+  author      = {{IEC}},
+  title       = {{IEC TS 62443-1-1: Industrial communication networks --- Network and system security --- Part 1-1: Terminology, concepts and models}},
+  institution = {International Electrotechnical Commission},
+  year        = {2009},
+  type        = {Technical Specification},
+  address     = {Geneva},
+  url         = {https://webstore.iec.ch/en/publication/7029}
+}
+
+@techreport{iec62443_2_1,
+  author      = {{IEC}},
+  title       = {{IEC 62443-2-1: Security for industrial automation and control systems --- Part 2-1: Security program requirements for IACS asset owners}},
+  institution = {International Electrotechnical Commission},
+  year        = {2024},
+  address     = {Geneva},
+  url         = {https://webstore.iec.ch/en/publication/62883}
+}
+
+@techreport{iec62443_2_4,
+  author      = {{IEC}},
+  title       = {{IEC 62443-2-4: Security for industrial automation and control systems --- Part 2-4: Security program requirements for IACS service providers}},
+  institution = {International Electrotechnical Commission},
+  year        = {2023},
+  address     = {Geneva},
+  url         = {https://webstore.iec.ch/en/publication/67631}
+}
+
+@techreport{iec62443_3_2,
+  author      = {{IEC}},
+  title       = {{IEC 62443-3-2: Security for industrial automation and control systems --- Part 3-2: Security risk assessment for system design}},
+  institution = {International Electrotechnical Commission},
+  year        = {2020},
+  address     = {Geneva},
+  url         = {https://webstore.iec.ch/en/publication/30727}
+}
+
+@techreport{iec62443_3_3,
+  author      = {{IEC}},
+  title       = {{IEC 62443-3-3: Industrial communication networks --- Network and system security --- Part 3-3: System security requirements and security levels}},
+  institution = {International Electrotechnical Commission},
+  year        = {2013},
+  address     = {Geneva},
+  url         = {https://webstore.iec.ch/en/publication/7033}
+}
+
+@techreport{iec62443_4_1,
+  author      = {{IEC}},
+  title       = {{IEC 62443-4-1: Security for industrial automation and control systems --- Part 4-1: Secure product development lifecycle requirements}},
+  institution = {International Electrotechnical Commission},
+  year        = {2018},
+  address     = {Geneva},
+  url         = {https://webstore.iec.ch/en/publication/33615}
+}
+
+@techreport{iec62443_4_2,
+  author      = {{IEC}},
+  title       = {{IEC 62443-4-2: Security for industrial automation and control systems --- Part 4-2: Technical security requirements for IACS components}},
+  institution = {International Electrotechnical Commission},
+  year        = {2019},
+  address     = {Geneva},
+  url         = {https://webstore.iec.ch/en/publication/34421}
+}
+
+@book{howa06a,
+  author    = {Howard, Michael and Lipner, Steve},
+  title     = {The Security Development Lifecycle},
+  publisher = {Microsoft Press},
+  address   = {Redmond, WA},
+  year      = {2006},
+  isbn      = {978-0735622142},
+  doi = {10.1007/s11623-010-0021-7}
+}
+
+@article{fluc19a,
+  author  = {Fluchs, Sarah and Rudolph, Heinz-Adalbert},
+  title   = {Wie {OT}-Security-Engineering eine Ingenieurwissenschaft wird: Ein Denkmodell und ein Datenmodell},
+  journal = {atp magazin},
+  volume  = {61},
+  number  = {8},
+  pages   = {74--86},
+  year    = {2019},
+  doi     = {10.17560/atp.v61i8.2410},
+  url     = {https://ojs.di-verlag.de/index.php/atp_edition/article/view/2410},
+  note    = {Sonderdruck, Vulkan-Verlag}
+}
+
+@phdthesis{fluc24a,
+  author  = {Fluchs, Sarah},
+  title   = {Cybersecurity Decision Diagrams: Identifying, Structuring and Documenting Cybersecurity Decisions in Engineering of Cyber-Physical Systems},
+  school  = {Helmut-Schmidt-Universit{\"a}t / Universit{\"a}t der Bundeswehr Hamburg},
+  year    = {2024},
+  doi     = {10.24405/16760},
+  url     = {https://openhsu.ub.hsu-hh.de/handle/10.24405/16760},
+  note    = {Funded by German Federal Ministry of Education and Research grant 16KIS1269K (IDEAS project)}
+}
+
+@misc{euCRA24,
+  author       = {{European Parliament and Council}},
+  title        = {Regulation ({EU}) 2024/2847 of 23 October 2024 on horizontal cybersecurity requirements for products with digital elements ({Cyber Resilience Act})},
+  year         = {2024},
+  howpublished = {Official Journal of the European Union L 2024/2847},
+  url          = {https://eur-lex.europa.eu/eli/reg/2024/2847/oj}
+}
+
+@misc{euNIS22,
+  author       = {{European Parliament and Council}},
+  title        = {Directive ({EU}) 2022/2555 of 14 December 2022 on measures for a high common level of cybersecurity across the {Union} ({NIS2})},
+  year         = {2022},
+  howpublished = {Official Journal of the European Union L 333/80},
+  url          = {https://eur-lex.europa.eu/eli/dir/2022/2555/oj}
+}
+
+@misc{euRCE22,
+  author       = {{European Parliament and Council}},
+  title        = {Directive ({EU}) 2022/2557 of 14 December 2022 on the resilience of critical entities},
+  year         = {2022},
+  howpublished = {Official Journal of the European Union L 333/164},
+  url          = {https://eur-lex.europa.eu/eli/dir/2022/2557/oj}
+}
+
+@misc{euPLD24,
+  author       = {{European Parliament and Council}},
+  title        = {Directive ({EU}) 2024/2853 of the European Parliament and of the Council of 23 October 2024 on liability for defective products and repealing Council Directive 85/374/{EEC}},
+  howpublished = {Official Journal of the European Union, L series, 18 November 2024},
+  year         = {2024},
+  url          = {https://eur-lex.europa.eu/eli/dir/2024/2853/oj}
+}
+
+@misc{breg26a,
+  author       = {{Deutscher Bundestag}},
+  title        = {Entwurf eines Gesetzes zur Modernisierung des Produkthaftungsrechts (Gesetzentwurf der Bundesregierung)},
+  howpublished = {Bundestags-Drucksache 21/4297, 21.~Wahlperiode},
+  year         = {2026},
+  month        = feb,
+  address      = {Berlin},
+  url          = {https://dserver.bundestag.de/btd/21/042/2104297.pdf}
+}
+
+@misc{euM606,
+  author       = {{European Commission}},
+  title        = {Commission Implementing Decision {C(2025)} 618 final of 3 February 2025 on a standardisation request to {CEN}, {CENELEC} and {ETSI} as regards products with digital elements in support of Regulation ({EU}) 2024/2847 ({Cyber Resilience Act})},
+  howpublished = {Standardisation request M/606},
+  year         = {2025},
+  month        = feb,
+  address      = {Brussels},
+  url          = {https://eur-lex.europa.eu/eli/C/2025/618/oj/eng}
+}
+
+@techreport{vdivde2182,
+  author      = {{VDI/VDE}},
+  title       = {{VDI/VDE 2182-1: IT-security for industrial automation --- General procedure model}},
+  institution = {Verein Deutscher Ingenieure / Verband der Elektrotechnik},
+  year        = {2011},
+  address     = {D{\"u}sseldorf},
+  url         = {https://www.vdi.de/richtlinien/details/vdivde-2182-blatt-1-it-security-for-industrial-automation-general-model}
+}
+
+@techreport{stou23a,
+  author      = {Stouffer, Keith and Pease, Michael and Tang, CheeYee and Zimmerman, Timothy and Pillitteri, Victoria and Lightman, Suzanne and Hahn, Adam and Saravia, Stephanie and Sherule, Aslam and Thompson, Michael},
+  title       = {Guide to Operational Technology ({OT}) Security},
+  institution = {National Institute of Standards and Technology},
+  year        = {2023},
+  number      = {SP 800-82 Rev. 3},
+  address     = {Gaithersburg, MD},
+  doi         = {10.6028/NIST.SP.800-82r3}
+}
+
+@misc{spotforecast2,
+  author       = {Bartz-Beielstein, Thomas},
+  title        = {{spotforecast2}: Time-series Forecasting with Sequential Parameter Optimization},
+  year         = {2026},
+  howpublished = {\url{https://github.com/sequential-parameter-optimization/spotforecast2}},
+  note         = {Version 0.22.3, AGPL-3.0-or-later}
+}
+
+@misc{spotforecast2safe,
+  author       = {Bartz-Beielstein, Thomas},
+  title        = {{spotforecast2-safe}: Safety-critical Subset of {spotforecast2}},
+  year         = {2026},
+  howpublished = {\url{https://github.com/sequential-parameter-optimization/spotforecast2-safe}},
+  note         = {AGPL-3.0-or-later}
+}
+
+@article{stet24a,
+  author  = {Stettinger, Georg and Weissensteiner, Patrick and Khastgir, Siddartha},
+  title   = {Trustworthiness Assurance Assessment for High-Risk {AI}-Based Systems},
+  journal = {IEEE Access},
+  volume  = {12},
+  pages   = {22718--22745},
+  year    = {2024},
+  doi     = {10.1109/ACCESS.2024.3364387}
+}
+
+@book{raue25a,
+  editor    = {Raue, Benjamin and von Ungern-Sternberg, Antje and Kumkar, Lea Katharina and R\"{u}fner, Thomas},
+  title     = {Artificial Intelligence and Fundamental Rights},
+  series    = {Trier Studies on Digital Law},
+  volume    = {4},
+  publisher = {University of Trier},
+  year      = {2025},
+  isbn      = {9783565013197},
+  doi       = {10.25353/ubtr-dab1-9b5c-1ec6},
+  note      = {CC-BY 4.0}
+}
+
+@inproceedings{fluc22a,
+  title={A Security Decision Base: How to Prepare Security by Design Decisions for Industrial Control Systems: Analysis of Concepts for Organizing Security-Relevant Information from Software Engineering, Requirements Engineering, and Systems Engineering},
+  author={Fluchs, Sarah and Drath, Rainer and Fay, Alexander},
+  booktitle={Entwurf komplexer Automatisierungssysteme: Beschreibungsmittel, Methoden, Werkzeuge und Anwendungen (EKA 2022)},
+  year={2022},
+  organization={17. Fachtagung},
+  address={Magdeburg},
+  url={https://openhsu.ub.hsu-hh.de/handle/10.24405/14723}
+}
+
+@techreport{gsel24a,
+  author = {G'Sell, Florence },
+  date-added = {2026-04-19 22:00:40 +0200},
+  date-modified = {2026-04-19 22:02:19 +0200},
+  institution = {Stanford Cyber Policy Center},
+  title = {Regulating Under Uncertainty: Governance Options for Generative AI},
+  year = {2024},
+  url = {https://cyber.fsi.stanford.edu/content/regulating-under-uncertainty-governance-options-generative-ai}
+}
+
+@article{chor22a,
+author = {Chorev, Shir and Tannor, Philip and Ben Israel, Dan and Bressler, Noam and Gabbay, Itay and Hutnik, Nir and Liberman, Jonatan and Perlmutter, Matan and Romanyshyn, Yurii and Rokach, Lior},
+journal = {Journal of Machine Learning Research},
+pages = {1--6},
+title = {{Deepchecks: A Library for Testing and Validating Machine Learning Models and Data}},
+url = {http://jmlr.org/papers/v23/22-0281.html},
+volume = {23},
+year = {2022}
+}
+
+@Manual{r21a,
+title = {R: A Language and Environment for Statistical Computing},
+author = {{R Core Team}},
+organization = {R Foundation for Statistical Computing},
+address = {Vienna, Austria},
+year = {2021},
+url = {https://www.R-project.org/},
+}
+
+
+@book{publ21a,
+	date-added = {2026-04-24 12:45:40 +0200},
+	date-modified = {2026-04-24 12:46:05 +0200},
+	doi = {10.2760/376602},
+	editor = {{Publications Office}},
+	title = {AI Watch, AI standardisation landscape state of play and link to the EC proposal for an AI regulatory framework},
+	year = {2021},
+	bdsk-url-1 = {https://doi.org/10.2760/376602},
+}
+
+@manual{isoi21a,
+  author = {{ISO/IEC}},
+  note       = {{International Organization for Standardization} and {International Electrotechnical Commission}},
+  title        = {{ISO/IEC TR} 24027:2021 -- Information technology -- Artificial intelligence ({AI}) -- Bias in {AI} systems and {AI} aided decision making},
+  organization = {{ISO/IEC JTC 1/SC 42}},
+  year         = {2021},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/77607.html}
+}
+
+@manual{isoi22a,
+  author = {{ISO/IEC}},
+  note       = {{International Organization for Standardization} and {International Electrotechnical Commission}},
+  title        = {{ISO/IEC TS} 4213:2022 -- Information technology -- Artificial intelligence -- Assessment of machine learning classification performance},
+  organization = {{ISO/IEC JTC 1/SC 42}},
+  year         = {2022},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/79799.html}
+}
+
+@manual{isoi22b,
+  author = {{ISO/IEC}},
+  note       = {{International Organization for Standardization} and {International Electrotechnical Commission}},
+  title        = {{ISO/IEC} 38507:2022 -- Information technology -- Governance of {IT} -- Governance implications of the use of artificial intelligence by organizations},
+  organization = {{ISO/IEC JTC 1/SC 40}},
+  year         = {2022},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/56641.html}
+}
+
+@manual{isoi23a,
+  author = {{ISO/IEC}},
+  note       = {{International Organization for Standardization} and {International Electrotechnical Commission}},
+  title        = {{ISO/IEC} 5338:2023 -- Information technology -- Artificial intelligence -- {AI} system life cycle processes},
+  organization = {{ISO/IEC JTC 1/SC 42}},
+  year         = {2023},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/81118.html}
+}
+
+@manual{isoi23b,
+  author = {{ISO/IEC}},
+  note       = {{International Organization for Standardization} and {International Electrotechnical Commission}},
+  title        = {{ISO/IEC} 23894:2023 -- Information technology -- Artificial intelligence -- Guidance on risk management},
+  organization = {{ISO/IEC JTC 1/SC 42}},
+  year         = {2023},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/77304.html}
+}
+
+@manual{isoi23c,
+  author = {{ISO/IEC}},
+  note       = {{International Organization for Standardization} and {International Electrotechnical Commission}},
+  title        = {{ISO/IEC} 42001:2023 -- Information technology -- Artificial intelligence -- Management system},
+  organization = {{ISO/IEC JTC 1/SC 42}},
+  year         = {2023},
+  address      = {Geneva},
+  url          = {https://www.iso.org/standard/81230.html}
+}
+
+@techreport{hleg19a,
+  author       = {{High-Level Expert Group on Artificial Intelligence}},
+  title        = {Ethics Guidelines for Trustworthy {AI}},
+  institution  = {European Commission, Directorate-General for Communications Networks, Content and Technology},
+  year         = {2019},
+  month        = apr,
+  address      = {Brussels},
+  url          = {https://digital-strategy.ec.europa.eu/en/library/ethics-guidelines-trustworthy-ai}
+}
+
+@techreport{hleg20a,
+  author       = {{High-Level Expert Group on Artificial Intelligence}},
+  title        = {Assessment List for Trustworthy Artificial Intelligence ({ALTAI}) for Self Assessment},
+  institution  = {European Commission, Directorate-General for Communications Networks, Content and Technology},
+  year         = {2020},
+  month        = jul,
+  address      = {Brussels},
+  url          = {https://digital-strategy.ec.europa.eu/en/library/assessment-list-trustworthy-artificial-intelligence-altai-self-assessment}
+}
+
+@misc{kritisDachG26,
+  author       = {{Bundesrepublik Deutschland}},
+  title        = {Gesetz zur Umsetzung der Richtlinie ({EU}) 2022/2557 und zur St{\"a}rkung der Resilienz kritischer Anlagen ({KRITIS}-Dachgesetz -- {KRITISDachG})},
+  howpublished = {Bundesgesetzblatt Teil~I, Nr.~66},
+  year         = {2026},
+  month        = mar,
+  note         = {vom 11.~M{\"a}rz 2026, ausgegeben zu Bonn am 16.~M{\"a}rz 2026},
+  url          = {https://www.recht.bund.de/bgbl/1/2026/66/VO.html}
+}
+
+@article{colo25a,
+  author       = {Colonna, Liane},
+  title        = {The end of open source? {R}egulating open source under the cyber resilience act and the new product liability directive},
+  journal      = {Computer Law \& Security Review},
+  volume       = {56},
+  year         = {2025},
+  doi          = {10.1016/j.clsr.2024.106105},
+  url          = {https://doi.org/10.1016/j.clsr.2024.106105}
+}
+
+@article{vsch25a,
+  author       = {{van 't Schip}, Mattis},
+  title        = {The Cyber Resilience Act and Open-Source Software: A Fine Balancing Act},
+  journal      = {Journal of Intellectual Property, Information Technology and E-Commerce Law ({JIPITEC})},
+  volume       = {16},
+  number       = {1},
+  year         = {2025},
+  url          = {https://www.jipitec.eu/jipitec/article/view/421}
+}
+
+@inproceedings{kike24a,
+  author       = {Kikelj, Matija and Sabic, Ivan},
+  title        = {Strengthening the Digital Ecosystem: {E}ffects of the Cyber Resilience Act ({CRA}) on Open-Source Software},
+  booktitle    = {2024 {IEEE} International Conference on Cyber Security and Resilience ({CSR})},
+  publisher    = {IEEE},
+  year         = {2024},
+  doi          = {10.1109/CSR61664.2024.10679481},
+  url          = {https://doi.org/10.1109/CSR61664.2024.10679481}
+}
+
+@misc{guld24a,
+  author       = {Guldimann, Philipp and Spiridonov, Alexander and Staab, Robin and Jovanovi{\'c}, Nikola and Vero, Mark and Vechev, Velko and Gueorguieva, Anna-Maria and Balunovi{\'c}, Mislav and Konstantinov, Nikola and Bielik, Pavol and Tsankov, Petar and Vechev, Martin},
+  title        = {{COMPL-AI} Framework: A Technical Interpretation and {LLM} Benchmarking Suite for the {EU} Artificial Intelligence Act},
+  year         = {2024},
+  howpublished = {arXiv preprint},
+  eprint       = {2410.07959},
+  archiveprefix= {arXiv},
+  primaryclass = {cs.CL},
+  url          = {https://arxiv.org/abs/2410.07959},
+  note         = {Open-source benchmarking suite at \url{https://github.com/compl-ai/compl-ai}}
+}
+
+@article{luca25a,
+  author       = {Lucaj, Laura and Loosley, Alex and Jonsson, H{\aa}kan and Gasser, Urs and {Van der Smagt}, Patrick},
+  title        = {{TechOps}: Technical Documentation Templates for the {AI} {A}ct},
+  journal      = {Proceedings of the {AAAI/ACM} Conference on {AI}, Ethics, and Society},
+  volume       = {8},
+  number       = {2},
+  year         = {2025},
+  doi          = {10.1609/aies.v8i2.36663},
+  url          = {https://doi.org/10.1609/aies.v8i2.36663},
+  note         = {Open-source templates at \url{https://github.com/AI-Auditing-Group/TechOps}; preprint arXiv:2508.08804}
+}
+
+@misc{ethyca_fides,
+  author       = {{Ethyca}},
+  title        = {Fides: The Privacy Engineering and Compliance Framework},
+  year         = {2024},
+  howpublished = {Open-source software, version 2.x},
+  url          = {https://github.com/ethyca/fides},
+  note         = {Apache 2.0 license; declarative privacy-as-code platform for {GDPR}/{CCPA}/{LGPD} compliance}
+}
+
+@misc{air_blackbox,
+  author       = {{ARK Forge}},
+  title        = {{AIR Blackbox}: {EU} {AI} {A}ct Compliance Scanner for {Python} {AI} Agents},
+  year         = {2025},
+  howpublished = {Open-source software},
+  url          = {https://github.com/airblackbox/air-platform},
+  note         = {Apache 2.0 license; CLI scanner mapping {LangChain}/{CrewAI}/{AutoGen}/{OpenAI} code patterns to AI Act articles 9--11}
+}
+
+@misc{mcp_eu_ai_act,
+  author       = {{ARK Forge}},
+  title        = {{MCP EU AI Act} Compliance Scanner},
+  year         = {2025},
+  howpublished = {Open-source software},
+  url          = {https://github.com/ark-forge/mcp-eu-ai-act},
+}
+
+@INPROCEEDINGS{otto07a,
+  author={Otto, Paul N. and Anton, Annie I.},
+  booktitle={15th IEEE International Requirements Engineering Conference (RE 2007)}, 
+  title={Addressing Legal Requirements in Requirements Engineering}, 
+  year={2007},
+  volume={},
+  number={},
+  pages={5-14},
+  keywords={Law;Legal factors;Logic programming;Monitoring;Government;Information security;Legislation;Software systems;Computer science;Systems engineering and theory},
+  doi={10.1109/RE.2007.65}}
+
+@ARTICLE{brea08a,
+  author={Breaux, Travis and Antón, Annie},
+  journal={IEEE Transactions on Software Engineering},
+  title={Analyzing Regulatory Rules for Privacy and Security Requirements},
+  year={2008},
+  volume={34},
+  number={1},
+  pages={5-20},
+  keywords={Privacy;Law;Information security;Permission;Software systems;Legal factors;Software engineering;Data security;Data mining;Insurance;Requirements/Specifications;Security and Privacy Protection;Legal Aspects of Computing;Requirements/Specifications;Security and Privacy Protection},
+  doi={10.1109/TSE.2007.70746}}
+
+@misc{chow25a,
+  author       = {Chow, Michael},
+  title        = {quartodoc: Generate {API} Documentation with {Quarto}},
+  year         = {2025},
+  howpublished = {GitHub},
+  url          = {https://github.com/machow/quartodoc},
+  note         = {Version 0.11.1; documentation at \url{https://machow.github.io/quartodoc/}.}
+}
+
+@misc{alla26a,
+  author       = {Allaire, J.J. and Teague, Charles and Scheidegger, Carlos and Xie, Yihui and Dervieux, Christophe and Woodhull, Gordon},
+  title        = {{Quarto}},
+  year         = {2026},
+  howpublished = {Zenodo},
+  doi          = {10.5281/zenodo.5960048},
+  url          = {https://github.com/quarto-dev/quarto-cli},
+  note         = {Version 1.9}
+}
+
