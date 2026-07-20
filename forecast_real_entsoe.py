@@ -69,7 +69,7 @@ except ModuleNotFoundError:
 # Block 1 - Chapter 1 | CR-1
 # setup_logging MUST be first — before any other code
 # =============================================================================
-log_dir = Path("_cache/logs")
+log_dir = Path(__file__).parent / "_cache" / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
 logger, log_path = setup_logging(level=logging.INFO, log_dir=log_dir)
 logger.info("Pipeline start - CR-1 to CR-4, Chapters 1-13.")
@@ -109,7 +109,7 @@ WEATHER_COLS = [
     "surface_pressure", "wind_gusts_10m"
 ]
 
-DATA_HOME = Path.cwd() / "_cache" / "spotforecast2_data"
+DATA_HOME = Path(__file__).parent / "_cache" / "spotforecast2_data"
 DATA_HOME.mkdir(parents=True, exist_ok=True)
 os.environ["SPOTFORECAST2_DATA"] = str(DATA_HOME)
 

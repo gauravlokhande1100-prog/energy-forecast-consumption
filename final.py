@@ -27,6 +27,7 @@ Daily workflow:
 import os
 import logging
 import requests
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -70,7 +71,7 @@ except ModuleNotFoundError:
 # setup_logging MUST be first — before any other code
 # Logs go to _cache/logs/validate/ to avoid overwriting production logs
 # =============================================================================
-log_dir = Path("_cache/logs/validate")
+log_dir = Path(__file__).parent / "_cache" / "logs" / "validate"
 log_dir.mkdir(parents=True, exist_ok=True)
 logger, log_path = setup_logging(level=logging.INFO, log_dir=log_dir)
 logger.info("Pipeline start - CR-1 to CR-4, Chapters 1-13.")
@@ -93,12 +94,15 @@ print("API key loaded.")
 # =============================================================================
 # Block 3 - Chapter 2 | CR-2
 # Pinned constants - same input = bit-identical output (CR-2)
-# TOMORROW_UTC is derived from DATA_END (not the real-time clock) so that
-# running this script on any future date always predicts 2026-07-18,
-# ensuring bit-identical reproducibility for the professor's verification.
+# DATA_END is derived from --date so TOMORROW_UTC is always the requested date,
+# not the real-time clock. Same model, same training window = reproducible result.
 # =============================================================================
 DATA_START  = "2024-01-01 00:00"   # pinned CR-2 — do NOT change
-DATA_END    = "2026-07-08 23:00"   # pinned CR-2 — do NOT change
+_p = argparse.ArgumentParser(description="Reproduce a past ENTSO-E forecast.")
+_p.add_argument("--date", required=True, metavar="YYYY-MM-DD",
+                help="Target forecast date to reproduce (e.g. 2026-07-03).")
+_args = _p.parse_args()
+DATA_END    = (pd.Timestamp(_args.date) - pd.Timedelta(hours=1)).strftime("%Y-%m-%d %H:%M")
 COUNTRY     = "DE"
 RANDOM_SEED = 2026                 # fixed seed CR-2
 
@@ -112,11 +116,11 @@ WEATHER_COLS = [
     "surface_pressure", "wind_gusts_10m"
 ]
 
-DATA_HOME = Path.cwd() / "_cache" / "spotforecast2_data"   # shared read — no re-download
+DATA_HOME = Path(__file__).parent / "_cache" / "spotforecast2_data"   # shared read — no re-download
 DATA_HOME.mkdir(parents=True, exist_ok=True)
 os.environ["SPOTFORECAST2_DATA"] = str(DATA_HOME)
 
-OUTPUT_DIR = Path(r"C:\Users\Gaurav\DDMO_PY_ENV\ddmo-sose-26\data") / "validate"
+OUTPUT_DIR = Path(__file__).parent / "data" / "validate"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 timestamp_now = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
 
@@ -137,7 +141,7 @@ logger.info(
     f"target={target_date_str}."
 )
 print(f"\n  DATA_START : {DATA_START}  (pinned CR-2)")
-print(f"  DATA_END   : {DATA_END}  (pinned CR-2)")
+print(f"  DATA_END   : {DATA_END}  (derived from --date)")
 print(f"  Target day : {target_date_str}  (derived from DATA_END)")
 print(f"  Key lags   : {KEY_LAGS[:6]}... ({len(KEY_LAGS)} total)")
 
@@ -336,7 +340,7 @@ try:
             "latitude"  : 50.110924,
             "longitude" : 8.682127,
             "start_date": pd.Timestamp(DATA_START).strftime("%Y-%m-%d"),
-            "end_date"  : pd.Timestamp(DATA_END).strftime("%Y-%m-%d"),
+            "end_date"  : target_date_str,
             "hourly"    : ",".join(WEATHER_COLS),
             "timezone"  : "UTC"
         },
@@ -549,7 +553,7 @@ baseline_tomorrow = hist_y_all.reindex(
 ).values
 
 # Save submission CSV — Ch 12.6 exact format, isolated under data/validate/
-pred_csv = OUTPUT_DIR / f"predictions_{target_date_str}.csv"
+pred_csv = OUTPUT_DIR / f"cross_predictions_{target_date_str}.csv"
 pd.DataFrame({
     "timestamp_utc" : [i.strftime("%Y-%m-%dT%H:%M:%SZ")
                        for i in TOMORROW_HOURS],

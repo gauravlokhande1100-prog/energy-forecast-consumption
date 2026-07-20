@@ -34,7 +34,7 @@ parser.add_argument(
     help="Specific day to highlight in the detail panel (default: most recent scored day).",
 )
 args = parser.parse_args()
-HIGHLIGHT_DATE = "2026-07-09"  # None means auto-select most recent
+HIGHLIGHT_DATE = args.date  # None means auto-select most recent
 
 # Anchor all paths to the script's directory so it works from any cwd
 REPO_ROOT = Path(__file__).resolve().parent
@@ -103,15 +103,15 @@ print(f"  Actuals: {len(actuals):,} hourly rows, "
 # =============================================================================
 # Step 2: Load all predictions_*.csv and compute MAE / MAPE per day
 # =============================================================================
-pred_files = sorted(DATA_DIR.glob("predictions_????-??-??.csv"))
-print(f"\nFound {len(pred_files)} prediction files in data/.")
+pred_files = sorted((DATA_DIR / "validate").glob("cross_predictions_????-??-??.csv"))
+print(f"\nFound {len(pred_files)} cross-prediction files in data/validate/.")
 
 today_utc = pd.Timestamp(datetime.now(timezone.utc)).normalize()
 results   = []
 skipped   = []
 
 for pf in pred_files:
-    date_str  = pf.stem.replace("predictions_", "")
+    date_str  = pf.stem.replace("cross_predictions_", "")
     pred_date = pd.Timestamp(date_str, tz="UTC")
 
     # Actuals for a day are only complete the day after
@@ -119,10 +119,7 @@ for pf in pred_files:
         skipped.append(date_str)
         continue
 
-    # Prefer validate_predictions_*.csv if it exists for this date
-    validated = DATA_DIR / f"validate_predictions_{date_str}.csv"
-    source    = validated if validated.exists() else pf
-    df_pred = pd.read_csv(source)
+    df_pred = pd.read_csv(pf)
     df_pred["timestamp_utc"] = pd.to_datetime(df_pred["timestamp_utc"], utc=True)
     df_pred = df_pred.set_index("timestamp_utc")
 
@@ -209,8 +206,7 @@ else:
 # Step 5: Plot — Forecast vs Actual for selected day
 # =============================================================================
 _date_str  = most_recent.strftime("%Y-%m-%d")
-_validated = DATA_DIR / f"validate_predictions_{_date_str}.csv"
-pf_day     = _validated if _validated.exists() else DATA_DIR / f"predictions_{_date_str}.csv"
+pf_day     = DATA_DIR / "validate" / f"cross_predictions_{_date_str}.csv"
 
 df_day     = pd.read_csv(pf_day)
 df_day["timestamp_utc"] = pd.to_datetime(df_day["timestamp_utc"], utc=True)
