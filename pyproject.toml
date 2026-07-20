@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Course materials: Data-Driven Modeling and Optimization SoSe 2026 (safety-critical time-series forecasting)"
 requires-python = ">=3.13"
 dependencies = [
-    "spotforecast2-safe>=15.5.0,<16",
+    "spotforecast2-safe>=15.5.0,<26",
     "spotforecast2>=3.4.0,<4",
     "matplotlib",
     "ipykernel",
