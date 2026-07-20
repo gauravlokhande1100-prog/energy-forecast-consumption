@@ -5,7 +5,7 @@ description = "Course materials: Data-Driven Modeling and Optimization SoSe 2026
 requires-python = ">=3.13"
 dependencies = [
     "spotforecast2-safe>=15.5.0,<16",
-    "spotforecast2>=3.4.0,<4",
+    "spotforecast2>=3.4.0,<11",
     "matplotlib",
     "ipykernel",
     "pyarrow",
